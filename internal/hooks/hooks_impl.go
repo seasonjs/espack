@@ -8,6 +8,7 @@ import (
 	"seasonjs/espack/internal/config"
 	"seasonjs/espack/internal/devServer"
 	"seasonjs/espack/internal/plugins"
+	"seasonjs/espack/internal/utils"
 	"sync"
 )
 
@@ -31,11 +32,14 @@ func NewHookContext() *hookContext {
 
 // InitHooks 初始化生命周期,做读取配置文件的操作
 func (c *hookContext) InitHooks() *hookContext {
+	if utils.Env.Dev() {
+		c.options = config.NewConfig().ReadFile().ReadConfig()
+	}
 	c.options = config.NewConfig().ReadFile().ReadConfig()
 	return c
 }
 
-// InstallPlugin 安装插件,目前是安装esbuild的
+// InstallPlugin 安装插件,目前是安装esbuild的 TODO:installPlugin
 func (c *hookContext) InstallPlugin() *hookContext {
 	//创建plugin
 	c.pluginList = plugins.NewPluginQueue()

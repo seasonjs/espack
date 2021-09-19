@@ -54,7 +54,7 @@ func (c *ctx) Run() {
 	r := c.r
 	res := make(map[string][]byte)
 	go func() {
-		//TODO:proxy
+		//TODO:proxy,websocket
 		r.GET("/*action", func(g *gin.Context) {
 			p := strings.ToLower(g.Request.URL.Path)
 			if strings.HasPrefix(p, "/") {

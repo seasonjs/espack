@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"seasonjs/espack/internal/builder"
-	"seasonjs/espack/internal/builder/pkg/htmlBuilder"
+	"seasonjs/espack/internal/builder/pkg/htmlPlugin"
 	"seasonjs/espack/internal/config"
 	"seasonjs/espack/internal/devServer"
 	"seasonjs/espack/internal/plugins"
@@ -36,7 +36,7 @@ func (c *hookContext) InitHooks() *hookContext {
 	//创建plugin
 	c.pluginList = plugins.NewPluginQueue()
 	//TODO:通过文件引用插件
-	c.pluginList.Add(htmlBuilder.NewHtmlPlugin())
+	c.pluginList.Add(htmlPlugin.NewHtmlPlugin())
 	return c
 }
 

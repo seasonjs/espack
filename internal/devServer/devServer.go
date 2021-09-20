@@ -28,11 +28,6 @@ func NewDevServer() *ctx {
 	return &ctx{IsINMemoryTrue, gin.Default(), nil}
 }
 
-//
-func transformRes(outputFiles []api.OutputFile) {
-
-}
-
 // Add 将build好的资源转换为Map格式
 func (c *ctx) Add(outputFiles *[]api.OutputFile) *ctx {
 	res := make(map[string][]byte)
@@ -47,7 +42,7 @@ func (c *ctx) Add(outputFiles *[]api.OutputFile) *ctx {
 	return c
 }
 
-// Run gin开发服务启动
+// Run gin开发服务启动,TODO 定制log
 func (c *ctx) Run() {
 	r := c.r
 	res := make(map[string][]byte)

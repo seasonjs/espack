@@ -28,7 +28,7 @@ func EsbuildStarter() *api.BuildResult {
 		Write:    false,
 		LogLevel: api.LogLevelInfo,
 		Target:   api.ES2016,
-		//Plugins:  []api.Plugin{htmlBuilder.NewHtmlPlugin()},
+		//Plugins:  []api.Plugin{htmlPlugin.NewHtmlPlugin()},
 	})
 	fmt.Printf("%d errors and %d warnings\n",
 		len(result.Errors), len(result.Warnings))

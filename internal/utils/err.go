@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// 无实际意义，仅作为区分使用
 type err struct {
 }
 

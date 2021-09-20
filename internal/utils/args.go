@@ -1,7 +1,7 @@
 package utils
 
+// 无实际意义，仅作为区分使用
 type args struct {
-	arg *interface{} //args 的指针
 }
 
 // 校验参数是否可填写 args

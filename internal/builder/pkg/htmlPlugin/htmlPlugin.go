@@ -1,4 +1,4 @@
-package htmlBuilder
+package htmlPlugin
 
 import (
 	"github.com/evanw/esbuild/pkg/api"

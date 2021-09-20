@@ -2,13 +2,14 @@ package hooks
 
 import (
 	"fmt"
+	"github.com/evanw/esbuild/pkg/api"
 	"os"
 	"os/signal"
 	"seasonjs/espack/internal/builder"
+	"seasonjs/espack/internal/builder/pkg/htmlBuilder"
 	"seasonjs/espack/internal/config"
 	"seasonjs/espack/internal/devServer"
 	"seasonjs/espack/internal/plugins"
-	"seasonjs/espack/internal/utils"
 	"sync"
 )
 
@@ -21,8 +22,7 @@ var (
 func NewHookContext() *hookContext {
 	once.Do(func() {
 		ctx = &hookContext{
-			pluginList: plugins.NewPluginQueue(),
-			options:    nil,
+			result: &api.BuildResult{},
 		}
 		buildFinish = make(chan bool, 1)
 	})
@@ -30,19 +30,24 @@ func NewHookContext() *hookContext {
 	return ctx
 }
 
-// InitHooks 初始化生命周期,做读取配置文件的操作
+// InitHooks 初始化生命周期,做读取配置文件的操作并解析
 func (c *hookContext) InitHooks() *hookContext {
-	if utils.Env.Dev() {
-		c.options = config.NewConfig().ReadFile().ReadConfig()
-	}
 	c.options = config.NewConfig().ReadFile().ReadConfig()
+	//创建plugin
+	c.pluginList = plugins.NewPluginQueue()
+	//TODO:通过文件引用插件
+	c.pluginList.Add(htmlBuilder.NewHtmlPlugin())
 	return c
 }
 
-// InstallPlugin 安装插件,目前是安装esbuild的 TODO:installPlugin
+// InstallPlugin 执行插件,安装esbuild的 TODO:installPlugin
 func (c *hookContext) InstallPlugin() *hookContext {
-	//创建plugin
-	c.pluginList = plugins.NewPluginQueue()
+	//按照顺序调用
+	for i := 0; i < c.pluginList.Len(); i++ {
+		plugin := c.pluginList.Next()
+		PluginResult := plugin.Setup()
+		c.result.OutputFiles = append(c.result.OutputFiles, PluginResult.OutputFile)
+	}
 	return c
 }
 
@@ -63,7 +68,8 @@ func (c *hookContext) StartDevServer() *hookContext {
 func (c *hookContext) StartESBuild() *hookContext {
 
 	go func() {
-		c.result = builder.EsbuildStarter()
+		//TODO 需要考虑被覆盖的问题
+		c.result.OutputFiles = append(c.result.OutputFiles, builder.EsbuildStarter().OutputFiles...)
 		buildFinish <- true
 		fmt.Println("esbuild finish")
 	}()

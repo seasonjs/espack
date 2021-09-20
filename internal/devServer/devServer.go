@@ -5,9 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"mime"
 	"net/http"
-	"os"
-	"path"
 	"path/filepath"
+	"seasonjs/espack/internal/utils"
 	"strings"
 )
 
@@ -41,8 +40,7 @@ func (c *ctx) Add(outputFiles *[]api.OutputFile) *ctx {
 		c.res = nil
 	}
 	for _, file := range *outputFiles {
-		bp, _ := os.Getwd()
-		path, _ := filepath.Rel(bp, file.Path)
+		path, _ := utils.FS.ConvertPath(file.Path)
 		res[path] = file.Contents
 	}
 	c.res = &res
@@ -57,8 +55,11 @@ func (c *ctx) Run() {
 		//TODO:proxy,websocket
 		r.GET("/*action", func(g *gin.Context) {
 			p := strings.ToLower(g.Request.URL.Path)
-			if strings.HasPrefix(p, "/") {
-				p = path.Clean(p)[1:]
+			//转换为映射的路径key TODO: 替换成从配置中读取
+			p, _ = utils.FS.ConvertPath("./dist/" + p)
+			// 是否是文件夹或者根路径
+			if p == "" || utils.FS.IsDir(p) {
+				p = filepath.Join(p, "/index.html")
 			}
 			ct := g.ContentType()
 			if len(ct) <= 0 {
@@ -72,11 +73,13 @@ func (c *ctx) Run() {
 				g.String(http.StatusOK, "构建进行中...")
 				return
 			}
+
 			body, ok := res[p]
 			if ok {
 				g.String(http.StatusOK, string(body))
 				return
 			}
+
 			g.String(http.StatusNotFound, "资源未找到...")
 		})
 		r.Run()

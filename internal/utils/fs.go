@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	cPath "path"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,9 @@ type fs struct {
 
 // ConvertPath 文件路径转换
 func (f fs) ConvertPath(path string) (string, error) {
+	if filepath.IsAbs(path) {
+		return path, nil
+	}
 	if Env.Dev() {
 		if strings.HasPrefix(path, "/") {
 			path = cPath.Clean(path)[1:]
@@ -20,4 +24,11 @@ func (f fs) ConvertPath(path string) (string, error) {
 	}
 
 	return filepath.Abs(path)
+}
+func (f fs) IsDir(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
 }

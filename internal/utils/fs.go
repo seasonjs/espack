@@ -4,6 +4,7 @@ import (
 	"os"
 	cPath "path"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -31,4 +32,9 @@ func (f fs) IsDir(path string) bool {
 		return false
 	}
 	return s.IsDir()
+}
+
+func (f fs) GetCurrentPath() string {
+	_, filename, _, _ := runtime.Caller(1)
+	return cPath.Dir(filename)
 }

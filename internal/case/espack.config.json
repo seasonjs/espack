@@ -1,4 +1,5 @@
 {
-  "enabled": true,
-  "path": "pathxxxxxxxxxxxxx"
+  "entry": {
+    "main": "index.jsx"
+  }
 }

@@ -3,6 +3,7 @@ package htmlPlugin
 import (
 	"github.com/evanw/esbuild/pkg/api"
 	"io/ioutil"
+	"seasonjs/espack/internal/config"
 	"seasonjs/espack/internal/plugins"
 	"seasonjs/espack/internal/utils"
 )
@@ -14,7 +15,7 @@ func NewHtmlPlugin() *htmlPlugin {
 	return &htmlPlugin{}
 }
 
-func (p htmlPlugin) Setup() plugins.PluginResult {
+func (p htmlPlugin) Setup(config *config.Configuration) plugins.PluginResult {
 	//TODO 替换为从配置中获得
 	path, _ := utils.FS.ConvertPath("./index.html")
 	outPath, _ := utils.FS.ConvertPath("./dist/index.html")

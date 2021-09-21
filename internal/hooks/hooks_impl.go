@@ -32,10 +32,13 @@ func NewHookContext() *hookContext {
 
 // InitHooks 初始化生命周期,做读取配置文件的操作并解析
 func (c *hookContext) InitHooks() *hookContext {
-	c.options = config.NewConfig().ReadFile().ReadConfig()
+	c.configuration = config.
+		NewConfigPoints().
+		ReadFile().
+		ReadConfig()
 	//创建plugin
 	c.pluginList = plugins.NewPluginQueue()
-	//TODO:通过文件引用插件
+	//TODO:通过文件引用插件，通过此处传入插件配置
 	c.pluginList.Add(htmlPlugin.NewHtmlPlugin())
 	return c
 }
@@ -45,7 +48,7 @@ func (c *hookContext) InstallPlugin() *hookContext {
 	//按照顺序调用
 	for i := 0; i < c.pluginList.Len(); i++ {
 		plugin := c.pluginList.Next()
-		PluginResult := plugin.Setup()
+		PluginResult := plugin.Setup(c.configuration)
 		c.result.OutputFiles = append(c.result.OutputFiles, PluginResult.OutputFile)
 	}
 	return c
@@ -69,7 +72,8 @@ func (c *hookContext) StartESBuild() *hookContext {
 
 	go func() {
 		//TODO 需要考虑被覆盖的问题
-		c.result.OutputFiles = append(c.result.OutputFiles, builder.EsbuildStarter().OutputFiles...)
+		outputFiles := builder.EsbuildStarter(*c.configuration).OutputFiles
+		c.result.OutputFiles = append(c.result.OutputFiles, outputFiles...)
 		buildFinish <- true
 		fmt.Println("esbuild finish")
 	}()

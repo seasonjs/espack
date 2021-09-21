@@ -8,34 +8,32 @@ import (
 	"seasonjs/espack/internal/utils"
 )
 
-func NewConfig(arg ...interface{}) *configuration {
+func NewConfigPoints(arg ...interface{}) *ConfigurationPoints {
 	var length = len(arg)
 	if length == 1 && arg[0] != nil {
 		switch arg[0].(type) {
-		case *configuration:
-			return arg[0].(*configuration)
+		case *ConfigurationPoints:
+			return arg[0].(*ConfigurationPoints)
 		default:
-			return &configuration{}
+			return &ConfigurationPoints{}
 		}
 	} else {
-		return &configuration{}
+		return &ConfigurationPoints{}
 	}
 }
 
-func (c *configuration) ReadFile(arg ...interface{}) *configuration {
+// ReadFile TODO 读取配置文件
+func (c *ConfigurationPoints) ReadFile(arg ...interface{}) *ConfigurationPoints {
 	var path = ""
-	var msg = "Read Config Args Error: %s , will use default configuration "
 	var length = len(arg)
 	if length == 1 && arg[0] != nil {
 		switch arg[0].(type) {
-		case *string:
+		case string:
 			path = arg[0].(string)
 		default:
-			fmt.Printf(msg, "args type unexpected")
 			path, _ = utils.FS.ConvertPath("./espack.config.json")
 		}
 	} else {
-		fmt.Printf(msg, "args length unexpected")
 		path, _ = utils.FS.ConvertPath("./espack.config.json")
 		fmt.Println(path)
 	}
@@ -54,13 +52,13 @@ func (c *configuration) ReadFile(arg ...interface{}) *configuration {
 	return c
 }
 
-//TODO
-func (c *configuration) WatchFileChange() {
+// WatchFileChange TODO
+func (c *ConfigurationPoints) WatchFileChange() {
 
 }
 
-func (c *configuration) ReadConfig() *configuration {
-	return c
+// ReadConfig 在此处进行配置的读取和转换 注意！！！ 必须在执行完成 ReadFile后调用
+func (c *ConfigurationPoints) ReadConfig() *Configuration {
+	config := NewConfig(*c).formatEntry().formatOutput().formatPlugin()
+	return config
 }
-
-//TODO: getter setter

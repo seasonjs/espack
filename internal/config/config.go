@@ -5,8 +5,17 @@ package config
 // EntryPoints https://webpack.docschina.org/concepts/entry-points/
 type EntryPoints interface{}
 
-// EntryPointsResults 统一将类型转换为Map类型
+// EntryPointsResults 统一将类型转换为Map类型 TODO：支持复杂结构
 type EntryPointsResults map[string]string
+
+// ModeResults https://webpack.docschina.org/configuration/mode/
+type ModeResults uint8
+
+const (
+	Production ModeResults = iota
+	Development
+	None
+)
 
 // OutputPoints https://webpack.docschina.org/configuration/output/
 type OutputPoints interface{}
@@ -27,8 +36,14 @@ type PluginPointsResults struct {
 
 // ConfigurationPoints JSON 类型声明
 type ConfigurationPoints struct {
+	//入口和上下文===============================================================
+	//string https://webpack.docschina.org/configuration/entry-context/#context
+	Context string
 	// string | string[] | map[string]string
 	Entry EntryPoints `json:"entry"`
+	//模式=====================================================================
+	//string = 'production': 'none' | 'development' | 'production'
+	Mode string `json:"mode"`
 	//string []string
 	Output OutputPoints `json:"output"`
 
@@ -37,11 +52,15 @@ type ConfigurationPoints struct {
 
 // Configuration ConfigurationPoints 转换为 Configuration 固定类型声明
 type Configuration struct {
+	//string TODO:是否要考虑多包项目呢
+	Context string
 	//map[string]string
 	Entry EntryPointsResults
 	//string {}
-	Output OutputPointsResults
+	Mode ModeResults
 
+	Output OutputPointsResults
+	//TODO:确定配置方案
 	Plugin PluginPointsResults
 }
 
@@ -52,7 +71,13 @@ func NewConfig(c ConfigurationPoints) *Configuration {
 	return &Configuration{}
 }
 
-//转换入口字段类型
+// 格式Context字段
+func (c *Configuration) formatContext() *Configuration {
+	c.Context = cp.Context
+	return c
+}
+
+// 转换入口字段类型
 func (c *Configuration) formatEntry() *Configuration {
 	entry := make(EntryPointsResults)
 	switch cp.Entry.(type) {
@@ -65,8 +90,10 @@ func (c *Configuration) formatEntry() *Configuration {
 			//TODO:需要转换成对应的名字
 			entry[string(rune(i))] = s
 		}
-	case EntryPointsResults:
-		entry = cp.Entry.(EntryPointsResults)
+	case map[string]interface{}:
+		for i, s := range cp.Entry.(map[string]interface{}) {
+			entry[i] = s.(string)
+		}
 	default:
 		//TODO:报错和提示
 		entry = nil
@@ -75,7 +102,29 @@ func (c *Configuration) formatEntry() *Configuration {
 	return c
 }
 
-//转换输出类型
+func (c *Configuration) formatMode() *Configuration {
+
+	if cp.Mode == "development" {
+		c.Mode = Development
+		return c
+	}
+	if cp.Mode == "production" {
+		c.Mode = Production
+		return c
+	}
+
+	if cp.Mode == "none" {
+		c.Mode = None
+		return c
+	}
+
+	// 默认设置为 Production
+	c.Mode = Production
+	return c
+
+}
+
+// 转换输出类型
 func (c *Configuration) formatOutput() *Configuration {
 	output := OutputPointsResults{}
 	switch cp.Output.(type) {

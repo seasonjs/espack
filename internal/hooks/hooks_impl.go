@@ -39,7 +39,7 @@ func (c *hookContext) InitHooks() *hookContext {
 	//创建plugin
 	c.pluginList = plugins.NewPluginQueue()
 	//TODO:通过文件引用插件，通过此处传入插件配置
-	c.pluginList.Add(htmlPlugin.NewHtmlPlugin())
+	c.pluginList.Add(htmlPlugin.NewHtmlPlugin(htmlPlugin.HtmlPluginOption{}))
 	return c
 }
 
@@ -72,7 +72,7 @@ func (c *hookContext) StartESBuild() *hookContext {
 
 	go func() {
 		//TODO 需要考虑被覆盖的问题
-		outputFiles := builder.EsbuildStarter(*c.configuration).OutputFiles
+		outputFiles := builder.NewEsBuilder(*c.configuration).GetOptions().EsbuildStarter().OutputFiles
 		c.result.OutputFiles = append(c.result.OutputFiles, outputFiles...)
 		buildFinish <- true
 		fmt.Println("esbuild finish")

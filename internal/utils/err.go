@@ -14,6 +14,7 @@ type stackTracer interface {
 	StackTrace() errors.StackTrace
 }
 
+// LogAndExit TODO: 待增加只报错不退出逻辑
 func (e err) LogAndExit(msg error) {
 	fmt.Println(msg.Error())
 	if err, ok := msg.(stackTracer); ok {

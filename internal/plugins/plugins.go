@@ -12,7 +12,7 @@ type PluginResult struct {
 }
 
 type Plugin interface {
-	// 不可以让插件更改到配置信息
+	// Setup 不可以让插件更改到配置信息
 	Setup(points *config.Configuration) PluginResult //触发Plugin执行
 }
 

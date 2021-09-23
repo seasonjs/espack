@@ -8,6 +8,12 @@ native web bundle tools
 >
 > aim to work with no node no webpack no npm env build faster
 
+# env
+
+```env
+set ES_PACK_DEV_ENV=dev
+```
+
 ## 初衷
 
 无运行时，无需配置(低配置)，轻量快速高效，最佳实践 ... 大概 ：）

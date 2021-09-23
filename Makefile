@@ -1,15 +1,22 @@
 BUILD_ENV := CGO_ENABLED=0
-ESBUILD_VERSION = $(shell cat version.txt)
+ESPACK_VERSION = $(shell cat version.txt)
 BUILD = `date +%FT%T%z`
 LDFLAGS = -ldflags "-w -s -X main.Version=${VERSION} -X main.Build=${BUILD}"
 
 TARGET_EXEC := espack
 
-.PHONY:all clean setup build-linux build-osx build-windows
+.PHONY:clean setup build-linux build-osx build-windows
 
 all:clean setup build-linux build-osx build-windows
 
+run:
+
+check:
+	go fmt ./
+	go vet ./
+
 clean:
+	go clean
 	rm -rf build
 
 setup:
@@ -25,3 +32,9 @@ build-osx: setup
 
 build-windows: setup
 	GOARCH=amd64 GOOS=windows go build ${LDFLAGS} -o build/windows/${TARGET_EXEC}.exe
+
+help:
+	@echo "make 格式化go代码 并编译生成二进制文件"
+	@echo "make clean 清理中间目标文件"
+	@echo "make check 格式化go代码"
+	@echo "make run 直接运行程序"

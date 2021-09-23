@@ -69,7 +69,6 @@ func (c *hookContext) StartDevServer() *hookContext {
 
 // StartESBuild 启动Esbuild
 func (c *hookContext) StartESBuild() *hookContext {
-
 	go func() {
 		//TODO 需要考虑被覆盖的问题
 		outputFiles := builder.NewEsBuilder(*c.configuration).GetOptions().EsbuildStarter().OutputFiles
@@ -79,6 +78,13 @@ func (c *hookContext) StartESBuild() *hookContext {
 	}()
 	return c
 }
+
+// LogAll 打印所有收集到的日志
+func (c *hookContext) LogAll() *hookContext {
+	return c
+}
+
+// HoldAll Hold主协程防止退出
 func (c *hookContext) HoldAll() {
 	sig := make(chan os.Signal)
 	//监听所有信号

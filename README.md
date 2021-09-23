@@ -27,7 +27,7 @@ package xxxPlugin
 
 import (
 	"fmt"
-	"seasonjs/espack/pkg/api/plugin"
+	"github.com/seasonjs/espack/pkg/api/plugin"
 )
 
 func init() { plugin.Register("espack_plugin_corejs", NewPlugin) }

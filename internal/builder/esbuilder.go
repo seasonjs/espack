@@ -21,26 +21,7 @@ func NewEsBuilder(configuration config.Configuration) *esbuild {
 
 // EsbuildStarter esbuild启动器 TODO:内存模式和文件模式切换 是否要对esbuild的 ast进行提取？
 func (e *esbuild) EsbuildStarter() *api.BuildResult {
-	//prefix := ""
-	//if utils.Env.Dev() {
-	//	prefix = "./internal/case"
-	//}
-	////TODO: 对esbuild的log进行处理
-	//result := api.Build(api.BuildOptions{
-	//	EntryPoints: []string{prefix + "/index.jsx"},
-	//	//Outfile:     "output.js",
-	//	Loader: map[string]api.Loader{
-	//		".html": api.LoaderFile,
-	//		".svg":  api.LoaderDataURL,
-	//	},
-	//	Outdir:   prefix + "/dist",
-	//	Bundle:   true,
-	//	Write:    false,
-	//	LogLevel: api.LogLevelInfo,
-	//	Target:   api.ES2016,
-	//	//Plugins:  []api.Plugin{htmlPlugin.NewHtmlPlugin()},
-	//})
-	result := api.Build(e.options)
+	result := api.Build(e.options) //TODO: 对esbuild的log进行处理 错误输出到页面而不是终止执行
 	fmt.Printf("%d errors and %d warnings\n",
 		len(result.Errors), len(result.Warnings))
 	if len(result.Errors) > 0 {

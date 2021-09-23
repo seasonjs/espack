@@ -24,6 +24,9 @@ type ctx struct {
 }
 
 func NewDevServer() *ctx {
+	if !utils.Env.Dev() {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	// 默认内存读取 TODO:支持从文件夹读取
 	return &ctx{IsINMemoryTrue, gin.Default(), nil}
 }

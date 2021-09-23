@@ -2,7 +2,6 @@ package mod
 
 import (
 	"fmt"
-	"github.com/mholt/archiver/v3"
 	"io/ioutil"
 	"net/http"
 	"seasonjs/espack/internal/utils"
@@ -11,10 +10,9 @@ import (
 
 // 测试解压效果
 func TestMod_UnTar(t *testing.T) {
-
-	in, _ := utils.FS.ConvertPath("../case/yarn-1.22.11.tgz")
+	in, _ := utils.FS.ConvertPath("../case/yarn-0.1.0.tgz")
 	out, _ := utils.FS.ConvertPath("../case/espack/mod")
-	err := archiver.Unarchive(in, out)
+	err := NewTarGz().UnTarGz(in, out)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -11,8 +11,8 @@ func NewMod() *mod {
 	return &mod{}
 }
 
-//
-func (m *mod) UnTar(input, output string) (err error) {
+// UnzipMod 解压模块
+func (m *mod) UnzipMod(input, output string) (err error) {
 
 	return nil
 }

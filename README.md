@@ -8,6 +8,12 @@ native web bundle tools
 >
 > aim to work with no node no webpack no npm env build faster
 
+# env
+
+```env
+set ES_PACK_DEV_ENV=dev
+```
+
 ## 初衷
 
 无运行时，无需配置(低配置)，轻量快速高效，最佳实践 ... 大概 ：）
@@ -61,9 +67,24 @@ func NewPlugin(opt interface{}) *interface{} {
 
 [_] 调研npm代替方案 js.mod -> go mod like?
 
+```
+|
+|__ [√] 调研npm元数据api获取
+|
+|__ [√] 调研unpack方式获取，不大可行，es module 太少（可能会成未来的答案,但是现在我选npm）
+|
+|__ [√] 调研go解压tgz格式文件
+|
+|__ [_] 调研go.mod 解析生成原理
+|
+|__ [_] 具体实施 大概 ：）
+```
+
 [_] 调研esbuild ast语法析出方案
 
 [_] 补充测试，增加代码覆盖率
+
+[_] 命名更符合go风格（x）,更加c-like(√)
 
 ## 不支持
 

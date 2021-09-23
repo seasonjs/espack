@@ -13,7 +13,7 @@ var (
 func init() {
 	once.Do(func() {
 		Env = &env{}
-		newEnv()
+		//newEnv()
 		FS = &fs{}
 		Args = &args{}
 		Err = &err{}

@@ -1,0 +1,4 @@
+.DS_Store
+/build/**
+espack.exe
+node_modules/

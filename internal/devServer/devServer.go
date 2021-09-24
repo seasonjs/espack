@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+//Server-sent events 解决HMR 问题
+
 type INMemory uint8
 
 const (

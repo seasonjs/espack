@@ -21,8 +21,8 @@ func (e *esbuild) GetOptions() *esbuild {
 			".html": api.LoaderFile,
 			".svg":  api.LoaderDataURL,
 		},
-		LogLevel: api.LogLevelDebug, //TODO: 自定义消息
-		Bundle:   true,              //TODO:调研Bundle的问题是否要暴露出来让用户配置
+		//LogLevel: api.LogLevelDebug, //TODO: 自定义消息
+		Bundle: true, //TODO:调研Bundle的问题是否要暴露出来让用户配置
 	}
 
 	return e

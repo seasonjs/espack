@@ -11,6 +11,7 @@ import (
 	"seasonjs/espack/internal/devServer"
 	"seasonjs/espack/internal/plugins"
 	"sync"
+	"time"
 )
 
 var (
@@ -32,6 +33,7 @@ func NewHookContext() *hookContext {
 
 // InitHooks 初始化生命周期,做读取配置文件的操作并解析
 func (c *hookContext) InitHooks() *hookContext {
+	c.timer = time.Now()
 	c.configuration = config.
 		NewConfigPoints().
 		ReadFile().
@@ -73,8 +75,9 @@ func (c *hookContext) StartESBuild() *hookContext {
 		//TODO 需要考虑被覆盖的问题
 		outputFiles := builder.NewEsBuilder(*c.configuration).GetOptions().EsbuildStarter().OutputFiles
 		c.result.OutputFiles = append(c.result.OutputFiles, outputFiles...)
+		expend := time.Since(c.timer)
+		fmt.Println("构建完成,共花费时间：", expend)
 		buildFinish <- true
-		fmt.Println("esbuild finish")
 	}()
 	return c
 }
@@ -89,6 +92,6 @@ func (c *hookContext) HoldAll() {
 	sig := make(chan os.Signal)
 	//监听所有信号
 	signal.Notify(sig)
-	fmt.Println("start!")
+	//fmt.Println("start!")
 	fmt.Println("stop,signal : ", <-sig)
 }

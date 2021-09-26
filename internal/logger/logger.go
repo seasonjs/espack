@@ -26,7 +26,7 @@ func NewLogger() *logger {
 	return &logger{log: zerolog.New(os.Stdout).With().Timestamp().Logger()}
 }
 
-// 设置需要的日志输出模式
+// SetLogMode 设置需要的日志输出模式
 func (l *logger) SetLogMode() *logger {
 	return l
 }

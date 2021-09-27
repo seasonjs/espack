@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"seasonjs/espack/internal/utils"
 	"testing"
 )
@@ -50,7 +51,17 @@ func TestMod_Fetch(t *testing.T) {
 	fmt.Println(string(s))
 }
 
-// curl --location --request GET 'https://registry.npmjs.org/${packeageName}' \
-// --header 'Accept: application/vnd.npm.install-v1+json'
-//curl --location --request GET 'https://registry.npmjs.org/-/package/yarn/dist-tags'
-//
+func TestVersion_Reg(t *testing.T) {
+	//v := versionReg.FindStringSubmatch("^1.1.0")
+	//t.Log(v)
+	var versionReg = regexp.MustCompile(`(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$`)
+	match := versionReg.FindStringSubmatch("^1.1.0")
+
+	results := map[string]string{}
+	for i, name := range match {
+		results[versionReg.SubexpNames()[i]] = name
+	}
+	t.Log(results)
+	//return result
+	//var myExp = regexp.MustCompile(`(?P<first>\d+)\.(\d+).(?P<second>\d+)`)
+}

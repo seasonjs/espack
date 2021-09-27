@@ -48,6 +48,7 @@ func (j *packageJSON) GetDependencies() map[string]string {
 	for key, value := range j.Dependencies {
 		dependencies[key] = value
 	}
+	//TODO: 需要移除包版本的前缀 例如: ^ ~
 	for key, value := range j.DevDependencies {
 		dependencies[key] = value
 	}

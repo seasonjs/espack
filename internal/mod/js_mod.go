@@ -118,7 +118,7 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 		s := reg.ReplaceAllString(line, "")
 		line = strings.TrimSpace(s)
 		la := spaceReg.Split(line, -1)
-		//TODO 改写成映射的格式
+		//TODO 改写成映射的格式,将格式错误改成error，但是现在error接口没完成 :)
 		if la[0] == "module" {
 			if j.Module != "" {
 				fmt.Println("第", i, "行,出现重复字段")
@@ -187,14 +187,21 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 			}
 			continue
 		}
-
-		if la[0] == "require" {
+		//TODO ()是否要判断为操作符呢？
+		if la[0] == "require" && requireTokenStack == nil {
+			if len(j.Require) > 0 {
+				fmt.Println("第", i, "行,出现重复字段")
+				continue
+			}
 			if len(la) == 2 {
+				if la[1] != "(" {
+					fmt.Println("第", i, "行非法字符")
+					continue
+				}
+				requireTokenStack = append(requireTokenStack, la...)
 				continue
 			}
-			if len(la) == 1 {
-				continue
-			}
+
 			fmt.Println("第", i, "行格式错误")
 			continue
 		}
@@ -202,44 +209,40 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 			fmt.Println("第", i, "行格式错误")
 			continue
 		}
-		fmt.Println("第", i, "行格式错误")
+		//如果栈大于1说明进入require体内
+		if len(requireTokenStack) > 1 {
+			//if len(j.Require) > 0 {
+			//	fmt.Println("第", i, "行,出现重复字段")
+			//	continue
+			//}
+			//如果不等于2说明有非法字符比如
+			//typescript
+			// react 17.0.2 react
+			if len(la) != 2 && la[0] != ")" {
+				fmt.Println("第", i, "行格式错误")
+				continue
+			}
+			if la[0] == ")" {
+				// 删除第1,2个切片
+				requireTokenStack = requireTokenStack[2:]
+				// 删除最后一个切片
+				//requireTokenStack = requireTokenStack[:len(requireTokenStack)-1]
+				j.Require = map[string]string{}
 
+				for i := 0; i < len(requireTokenStack); i = i + 2 {
+					j.Require[requireTokenStack[i]] = requireTokenStack[i+1]
+				}
+				requireTokenStack = nil
+				continue
+
+			}
+			requireTokenStack = append(requireTokenStack, la...)
+			continue
+		}
+		fmt.Println("第", i, "行格式错误")
 	}
-	//var separatorTrack []string
-	//for len(tokenStack) > 0 {
-	//	x := tokenStack[0]
-	//	tokenStack = tokenStack[1:]
-	//	// 如果操作符栈为空，则说明是开始
-	//	if len(separatorTrack) == 0 {
-	//		separatorTrack = append(separatorTrack, x)
-	//		continue
-	//	}
-	//	// 如果操作符栈为1，则说明是代码块内容
-	//	if len(separatorTrack) == 1 {
-	//		separatorTrack = append(separatorTrack, x)
-	//	}
-	//	// 如果操作符栈大于1，则说明是出现了问题
-	//	if len(separatorTrack) > 1 {
-	//		fmt.Println("解析失败 ：）")
-	//	}
-	//	fmt.Println(x)
-	//}
-	//fmt.Println(tokenStack)
 	if err != nil {
 		fmt.Println("读取文件失败:", err)
 	}
 	return j
-}
-
-//
-type modInfo struct {
-}
-
-func NewModInfo() *modInfo {
-	return &modInfo{}
-}
-
-// GetJsMod 获取模块的信息
-func (m *modInfo) GetJsMod(name string) {
-
 }

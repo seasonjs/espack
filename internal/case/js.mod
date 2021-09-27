@@ -12,3 +12,5 @@ require (  //不允许进行版本提升，因此不需要lock文件，此处格
     @types/react 17.0.24
     @types/react-dom 17.0.9
 )
+
+registry registry.npmjs.org //设置mod拉取的路径

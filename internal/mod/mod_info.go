@@ -3,9 +3,9 @@ package mod
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"net/http"
 	"seasonjs/espack/internal/utils"
+	"time"
 )
 
 // TODO:需要同步配置npm的：）
@@ -29,8 +29,18 @@ import (
 //      process.platform
 //    })`,
 // }
+var _httpCli = &http.Client{
+	Timeout: time.Duration(15) * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConnsPerHost:   1,
+		MaxConnsPerHost:       1,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	},
+}
 
-// 从npm远程获取的mod元数据
+// 从npm远程获取的mod元数据，只解析需要解析的字段，减少解析耗时
 type modMeta struct {
 	Dist struct {
 		Integrity    string `json:"integrity"`
@@ -40,8 +50,8 @@ type modMeta struct {
 		UnpackedSize int    `json:"unpackedSize"`
 		NpmSignature string `json:"npm-signature"`
 	} `json:"dist"`
-	Dependencies    map[string]string `json:"dependencies"`
-	DevDependencies map[string]string `json:"devDependencies"`
+	Dependencies map[string]string `json:"dependencies"`
+	//DevDependencies map[string]string `json:"devDependencies"`
 }
 type disMeta struct {
 	Latest string `json:"latest"`
@@ -82,10 +92,10 @@ func (i *modInfo) FetchModInfo() *modInfo {
 	req, _ := http.NewRequest("GET", i.Registry, nil)
 	// 通过设置请求头缩小元数据量
 	req.Header.Set("Accept", "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*")
-	//TODO 是否不需要每次都初始化Client
-	rsp, err := (&http.Client{}).Do(req)
+	rsp, err := (_httpCli).Do(req)
 	if err != nil {
-		fmt.Println("请求失败", err.Error())
+		fmt.Println("请求失败", err)
+		return i
 	}
 	defer rsp.Body.Close()
 	decoder := json.NewDecoder(rsp.Body)
@@ -94,7 +104,8 @@ func (i *modInfo) FetchModInfo() *modInfo {
 	err = decoder.Decode(&mm)
 	if err != nil {
 		//TODO:重试，不要退出
-		utils.Err.LogAndExit(errors.Wrap(err, "Read Config File Error"))
+		fmt.Println("请求数据出现错误包：", i.Registry)
+		return i
 	}
 	i.Shasum = mm.Dist.Shasum
 	i.integrity = mm.Dist.Integrity
@@ -111,18 +122,18 @@ func (i *modInfo) FetchModInfo() *modInfo {
 
 		}
 	}
-	if len(mm.DevDependencies) > 0 {
-		for name, version := range mm.DevDependencies {
-			// npm 的package.json 存在版本方言 ：）
-			v := utils.Version.FindVersionStr(version)
-			//最懒方案 ^^ 如果存在版本方言则选择拉取最新的版本
-			if len(v[""]) == 0 {
-				i.Require[name] = i.FetchLastVersion(name)
-				continue
-			}
-			i.Require[name] = v[""]
-		}
-	}
+	//if len(mm.DevDependencies) > 0 {
+	//	for name, version := range mm.DevDependencies {
+	//		// npm 的package.json 存在版本方言 ：）
+	//		v := utils.Version.FindVersionStr(version)
+	//		//最懒方案 ^^ 如果存在版本方言则选择拉取最新的版本
+	//		if len(v[""]) == 0 {
+	//			i.Require[name] = i.FetchLastVersion(name)
+	//			continue
+	//		}
+	//		i.Require[name] = v[""]
+	//	}
+	//}
 	return i
 }
 
@@ -134,16 +145,17 @@ func (i *modInfo) FetchLastVersion(name string) string {
 	//TODO 是否不需要每次都初始化Client
 	rsp, err := (&http.Client{}).Do(req)
 	if err != nil {
-		fmt.Println("请求失败", err.Error())
+		fmt.Println("请求失败", err)
 	}
 	defer rsp.Body.Close()
 	decoder := json.NewDecoder(rsp.Body)
+	rsp.Header.Get("")
 	//通过mm解析json
 	dm := disMeta{}
 	err = decoder.Decode(&dm)
 	if err != nil {
 		//TODO:重试，不要退出
-		utils.Err.LogAndExit(errors.Wrap(err, "Read Config File Error"))
+		fmt.Println("请求数据出现错误包：", i.Registry)
 	}
 	return dm.Latest
 }

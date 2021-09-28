@@ -2,9 +2,18 @@ package mod
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"seasonjs/espack/internal/utils"
 	"strings"
 )
+
+type JsSumAbs interface {
+	FetchRootModMeta(map[string]string) *jsSum
+	PrunerAndFetcher(path ...string) *jsSum
+	GetJsSum() *jsSum
+	WriteFile() *jsSum
+}
 
 // js.mod 的meta数据
 type jsSum struct {
@@ -14,14 +23,17 @@ type jsSum struct {
 }
 
 func NewJsSum() *jsSum {
-	return &jsSum{}
+	return &jsSum{
+		knownList:  make(map[string]*modInfo),
+		unKnowList: make(map[string]string),
+	}
 }
 
 // FetchRootModMeta 获取根js.mod的meta数据
-func (j *jsSum) FetchRootModMeta() *jsSum {
+func (j *jsSum) FetchRootModMeta(require map[string]string) *jsSum {
 	//TODO:等测试结束移除该接口
-	path, _ := utils.FS.ConvertPath("../case/js.mod")
-	require := NewJsMod().ReadFile(path).Require
+	//path, _ := utils.FS.ConvertPath("../case/js.mod")
+	//require := NewJsMod().ReadFile(path).Require
 	for name, version := range require {
 		key := fmt.Sprintf("%s@%s", name, version)
 		////如果有这个包则不需要在获取它的信息
@@ -50,10 +62,12 @@ func (j *jsSum) FetchRootModMeta() *jsSum {
 }
 
 // PrunerAndFetcher 剪枝&与递归请求
-func (j *jsSum) PrunerAndFetcher() {
+func (j *jsSum) PrunerAndFetcher() *jsSum {
 	if len(j.unKnowList) > 0 {
 		for nv, version := range j.unKnowList {
-			name := strings.Trim(nv, "@"+version)
+			//@type/string@1.2.0 trim type/string
+			//strings.TrimRight @type/string
+			name := strings.TrimRight(nv, "@"+version)
 			mi := NewModInfo(name, version).FetchModInfo()
 			j.knownList[nv] = mi
 			j.modList = append(j.modList, mi)
@@ -75,6 +89,30 @@ func (j *jsSum) PrunerAndFetcher() {
 		j.modList = nil
 		j.PrunerAndFetcher()
 	}
+	return j
+}
+
+func (j *jsSum) WriteFile(path ...string) *jsSum {
+	var filePath string
+	if len(path) == 1 && len(path[0]) > 0 {
+		filePath = path[0]
+	} else {
+		filePath, _ = utils.FS.ConvertPath("./js.sum")
+	}
+	// 覆盖写入，如果不存在就创建
+	f, err := os.OpenFile(filePath, os.O_TRUNC|os.O_CREATE, 0666) //打开文件
+	defer f.Close()
+	for s, info := range j.knownList {
+		_, err = io.WriteString(f, fmt.Sprintf("%s %s %s %s\n", s, info.TarBall, info.Shasum, info.integrity)) //写入文件(字符串)
+		for name, version := range info.Require {
+			_, err = io.WriteString(f, fmt.Sprintf("\t%s %s\n", name, version))
+		}
+		_, err = io.WriteString(f, fmt.Sprintf("\n"))
+	}
+	if err != nil {
+		panic(err)
+	}
+	return j
 }
 
 func (j *jsSum) GetJsSum() jsSum {

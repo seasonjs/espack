@@ -2,15 +2,16 @@ package devServer
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
-	"github.com/gin-gonic/gin"
 	"mime"
 	"net/http"
 	"path/filepath"
+	"seasonjs/espack/internal/devServer/pkg/liteS"
 	"seasonjs/espack/internal/utils"
 	"strings"
 )
 
-//Server-sent events 解决HMR 问题
+//TODO： Server-sent events 解决HMR 问题
+//不能使用esbuild的serve,因为它的serve不会提供额外的插件输出能力
 
 type INMemory uint8
 
@@ -21,16 +22,16 @@ const (
 
 type ctx struct {
 	iNMemory INMemory
-	r        *gin.Engine
+	r        *liteS.Engine
 	res      *map[string][]byte
 }
 
 func NewDevServer() *ctx {
-	if !utils.Env.Dev() {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	//if !utils.Env.Dev() {
+	//	liteS.SetMode(liteS.ReleaseMode)
+	//}
 	// 默认内存读取 TODO:支持从文件夹读取
-	return &ctx{IsINMemoryTrue, gin.Default(), nil}
+	return &ctx{IsINMemoryTrue, liteS.Default(), nil}
 }
 
 // Add 将build好的资源转换为Map格式
@@ -47,13 +48,13 @@ func (c *ctx) Add(outputFiles *[]api.OutputFile) *ctx {
 	return c
 }
 
-// Run gin开发服务启动,TODO 定制log
+// Run liteS服务器启动
 func (c *ctx) Run() {
 	r := c.r
 	res := make(map[string][]byte)
 	go func() {
-		//TODO:proxy,websocket
-		r.GET("/*action", func(g *gin.Context) {
+		//TODO:proxy,websocket,使用内置特性
+		r.GET("/*action", func(g *liteS.Context) {
 			p := strings.ToLower(g.Request.URL.Path)
 			//转换为映射的路径key TODO: 替换成从配置中读取
 			p, _ = utils.FS.ConvertPath("./dist/" + p)

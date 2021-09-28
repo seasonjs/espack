@@ -91,6 +91,27 @@ func NewPlugin(opt interface{}) *interface{} {
 
 [_] 命名更符合go风格（x）,更加c-like(√)
 
+[_] 移除gin框架，它build之后过于大了->切换到liteS（gin lite）
+
+迁移之后，没有了冗余的以下依赖，应用程序大小缩小了5M~~
+```text
+    github.com/gin-contrib/sse v0.1.0
+	github.com/go-playground/validator/v10 v10.9.0
+	github.com/goccy/go-json v0.7.8
+	github.com/json-iterator/go v1.1.12
+	github.com/mattn/go-isatty v0.0.14
+	github.com/stretchr/testify v1.7.0
+	github.com/ugorji/go/codec v1.2.6
+	google.golang.org/protobuf v1.27.1
+	gopkg.in/yaml.v2 v2.4.0
+```
+```
+    |__ [√]完美运行起gin的lite版 
+    |__ [_]移除过重依赖
+    |__ [_]内部日志改造
+    |__ [_]内部代码调整
+```
+
 ## 不支持
 
 目前来看不支持sass，grpc等一切需要使用node原生环境的包 ，除非你使用了node或者npm ：）

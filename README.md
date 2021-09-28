@@ -75,9 +75,14 @@ func NewPlugin(opt interface{}) *interface{} {
 |
 |__ [√] 调研go解压tgz格式文件
 |
-|__ [_] 调研go.mod 解析生成原理
+|__ [√] 调研go.mod 解析生成原理
 |
-|__ [_] 具体实施 大概 ：）
+|__ [_] 具体实施 大概
+    |__ [√]获取元数据与
+    |__ [√]解决循环依赖
+    |__ [√]根据js.mod依赖生成js.sum
+    |__ [_]根据package.json 生成js.mod
+    |__ [_]根据解析好的数据下载tarball
 ```
 
 [_] 调研esbuild ast语法析出方案

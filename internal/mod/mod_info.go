@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"seasonjs/espack/internal/logger"
 	"seasonjs/espack/internal/utils"
 	"time"
 )
@@ -94,7 +95,7 @@ func (i *modInfo) FetchModInfo() *modInfo {
 	req.Header.Set("Accept", "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*")
 	rsp, err := (_httpCli).Do(req)
 	if err != nil {
-		fmt.Println("请求失败", err)
+		logger.Warn("获取包的元数据信息失败，%s", err.Error())
 		return i
 	}
 	defer rsp.Body.Close()
@@ -104,7 +105,7 @@ func (i *modInfo) FetchModInfo() *modInfo {
 	err = decoder.Decode(&mm)
 	if err != nil {
 		//TODO:重试，不要退出
-		fmt.Println("请求数据出现错误包：", i.Registry)
+		logger.Warn("解析包%s的元数据失败", i.Registry)
 		return i
 	}
 	i.Shasum = mm.Dist.Shasum
@@ -145,7 +146,7 @@ func (i *modInfo) FetchLastVersion(name string) string {
 	//TODO 是否不需要每次都初始化Client
 	rsp, err := (&http.Client{}).Do(req)
 	if err != nil {
-		fmt.Println("请求失败", err)
+		logger.Warn("获取包最新版本失败，%s", err.Error())
 	}
 	defer rsp.Body.Close()
 	decoder := json.NewDecoder(rsp.Body)
@@ -155,7 +156,7 @@ func (i *modInfo) FetchLastVersion(name string) string {
 	err = decoder.Decode(&dm)
 	if err != nil {
 		//TODO:重试，不要退出
-		fmt.Println("请求数据出现错误包：", i.Registry)
+		logger.Warn("包最新版本%s的信息解析失败", i.Registry)
 	}
 	return dm.Latest
 }

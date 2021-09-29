@@ -2,10 +2,10 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
+	"seasonjs/espack/internal/logger"
 	"seasonjs/espack/internal/utils"
 )
 
@@ -36,7 +36,7 @@ func (c *ConfigurationPoints) ReadFile(arg ...interface{}) *ConfigurationPoints 
 		}
 	} else {
 		path, _ = utils.FS.ConvertPath("./espack.config.json")
-		fmt.Println(path)
+		logger.Info(path)
 	}
 	//生成工作目录路径
 	if len(c.Context) <= 0 {
@@ -50,7 +50,7 @@ func (c *ConfigurationPoints) ReadFile(arg ...interface{}) *ConfigurationPoints 
 	//Decode从输入流读取下一个json编码值并保存在v指向的值里
 	err := decoder.Decode(c)
 	if err != nil {
-		utils.Err.LogAndExit(errors.Wrap(err, "Read Config File Error"))
+		logger.Fail(errors.New(err.Error()), "读取配置文件失败")
 	}
 	return c
 }

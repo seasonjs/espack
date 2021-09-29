@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"os"
 	"regexp"
+	"seasonjs/espack/internal/logger"
 	"seasonjs/espack/internal/utils"
 	"strings"
 )
@@ -95,9 +96,9 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 	if err != nil {
 		if os.IsNotExist(err) {
 			//TODO:如果没有js.mod就读取package.json
-			utils.Err.LogAndExit(errors.Wrap(err, "js.mod 文件不存在！"))
+			logger.Warn("js.mod 文件不存在，将读取package.json文件")
 		} else {
-			utils.Err.LogAndExit(errors.Wrap(err, "js.mod 读取失败"))
+			logger.Fail(errors.New("js.mod 读取失败"), "未知错误")
 		}
 	}
 	file, _ := os.Open(path)
@@ -121,42 +122,42 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 		//TODO 改写成映射的格式,将格式错误改成error，但是现在error接口没完成 :)
 		if la[0] == "module" {
 			if j.Module != "" {
-				fmt.Println("第", i, "行,出现重复字段")
+				logger.Warn("第%d行出现重复字段", i)
 			}
 			if len(la) == 2 {
 				j.Module = la[1]
 			} else {
-				fmt.Println("第", i, "行格式错误")
+				logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 			}
 			continue
 		}
 		//TODO:是否要检查是合法版本
 		if la[0] == "version" {
 			if j.Version != "" {
-				fmt.Println("第", i, "行,出现重复字段")
+				logger.Warn("第%d行出现重复字段", i)
 			}
 			if len(la) == 2 {
 				j.Version = la[1]
 			} else {
-				fmt.Println("第", i, "行格式错误")
+				logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 			}
 			continue
 		}
 		if la[0] == "main" {
 			if j.Main != "" {
-				fmt.Println("第", i, "行,出现重复字段")
+				logger.Warn("第%d行,出现重复字段", i)
 			}
 			if len(la) == 2 {
 				j.Main = la[1]
 			} else {
-				fmt.Println("第", i, "行格式错误")
+				logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 			}
 			continue
 		}
 		// TODO 是否需要进行扩展支持多编译版本？
 		if la[0] == "target" {
 			if j.Target != api.DefaultTarget {
-				fmt.Println("第", i, "行,出现重复字段")
+				logger.Warn("第%d行,出现重复字段", i)
 			}
 			if len(la) == 2 {
 				switch la[1] {
@@ -180,33 +181,33 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 					j.Target = api.ESNext
 				default:
 					j.Target = api.DefaultTarget
-					fmt.Println("错误的target")
+					logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析target字段失败")
 				}
 			} else {
-				fmt.Println("第", i, "行格式错误")
+				logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 			}
 			continue
 		}
 		//TODO ()是否要判断为操作符呢？
 		if la[0] == "require" && requireTokenStack == nil {
 			if len(j.Require) > 0 {
-				fmt.Println("第", i, "行,出现重复字段")
+				logger.Warn("第%d行,出现重复字段", i)
 				continue
 			}
 			if len(la) == 2 {
 				if la[1] != "(" {
-					fmt.Println("第", i, "行非法字符")
+					logger.Fail(errors.New(fmt.Sprintf("第%d行出现非法字符(", i)), "解析js.mod失败")
 					continue
 				}
 				requireTokenStack = append(requireTokenStack, la...)
 				continue
 			}
 
-			fmt.Println("第", i, "行格式错误")
+			logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 			continue
 		}
 		if la[0] == "(" {
-			fmt.Println("第", i, "行格式错误")
+			logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 			continue
 		}
 		//如果栈大于1说明进入require体内
@@ -219,7 +220,7 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 			//typescript
 			// react 17.0.2 react
 			if len(la) != 2 && la[0] != ")" {
-				fmt.Println("第", i, "行格式错误")
+				logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 				continue
 			}
 			if la[0] == ")" {
@@ -239,10 +240,10 @@ func (j *jsMod) ReadFile(p ...string) *jsMod {
 			requireTokenStack = append(requireTokenStack, la...)
 			continue
 		}
-		fmt.Println("第", i, "行格式错误")
+		logger.Fail(errors.New(fmt.Sprintf("第%d行格式错误", i)), "解析js.mod失败")
 	}
 	if err != nil {
-		fmt.Println("读取文件失败:", err)
+		logger.Fail(errors.New(""), "读取js.mod文件失败")
 	}
 	return j
 }

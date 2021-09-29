@@ -2,8 +2,9 @@ package mod
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
 	"os"
+	"seasonjs/espack/internal/logger"
 	"seasonjs/espack/internal/utils"
 )
 
@@ -37,7 +38,7 @@ func (j *packageJSON) ReadFile(p ...string) *packageJSON {
 	//Decode从输入流读取下一个json编码值并保存在v指向的值里
 	err := decoder.Decode(j)
 	if err != nil {
-		fmt.Println("读取文件失败:", err)
+		logger.Fail(errors.Wrap(err, "读取文件失败"), "package.json")
 	}
 	return j
 }

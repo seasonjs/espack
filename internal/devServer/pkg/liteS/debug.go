@@ -5,11 +5,10 @@
 package liteS
 
 import (
-	"fmt"
-	"html/template"
 	"io"
 	"os"
 	"runtime"
+	"seasonjs/espack/internal/logger"
 	"seasonjs/espack/internal/utils"
 	"strconv"
 	"strings"
@@ -39,36 +38,36 @@ func IsDebugging() bool {
 // DebugPrintRouteFunc indicates debug log output format.
 var DebugPrintRouteFunc func(httpMethod, absolutePath, handlerName string, nuHandlers int)
 
-func debugPrintRoute(httpMethod, absolutePath string, handlers HandlersChain) {
-	if IsDebugging() {
-		nuHandlers := len(handlers)
-		handlerName := nameOfFunction(handlers.Last())
-		if DebugPrintRouteFunc == nil {
-			debugPrint("%-6s %-25s --> %s (%d handlers)\n", httpMethod, absolutePath, handlerName, nuHandlers)
-		} else {
-			DebugPrintRouteFunc(httpMethod, absolutePath, handlerName, nuHandlers)
-		}
-	}
-}
-
-func debugPrintLoadTemplate(tmpl *template.Template) {
-	if IsDebugging() {
-		var buf strings.Builder
-		for _, tmpl := range tmpl.Templates() {
-			buf.WriteString("\t- ")
-			buf.WriteString(tmpl.Name())
-			buf.WriteString("\n")
-		}
-		debugPrint("Loaded HTML Templates (%d): \n%s\n", len(tmpl.Templates()), buf.String())
-	}
-}
+//func debugPrintRoute(httpMethod, absolutePath string, handlers HandlersChain) {
+//	if IsDebugging() {
+//		nuHandlers := len(handlers)
+//		handlerName := nameOfFunction(handlers.Last())
+//		if DebugPrintRouteFunc == nil {
+//			debugPrint("%-6s %-25s --> %s (%d handlers)\n", httpMethod, absolutePath, handlerName, nuHandlers)
+//		} else {
+//			DebugPrintRouteFunc(httpMethod, absolutePath, handlerName, nuHandlers)
+//		}
+//	}
+//}
+//
+//func debugPrintLoadTemplate(tmpl *template.Template) {
+//	if IsDebugging() {
+//		var buf strings.Builder
+//		for _, tmpl := range tmpl.Templates() {
+//			buf.WriteString("\t- ")
+//			buf.WriteString(tmpl.Name())
+//			buf.WriteString("\n")
+//		}
+//		debugPrint("Loaded HTML Templates (%d): \n%s\n", len(tmpl.Templates()), buf.String())
+//	}
+//}
 
 func debugPrint(format string, values ...interface{}) {
 	if IsDebugging() {
-		if !strings.HasSuffix(format, "\n") {
-			format += "\n"
+		if strings.HasSuffix(format, "\n") {
+			strings.TrimRight(format, "\n")
 		}
-		fmt.Fprintf(DefaultWriter, "[GIN-debug] "+format, values...)
+		logger.Info(format, values...)
 	}
 }
 
@@ -83,35 +82,34 @@ func getMinVer(v string) (uint64, error) {
 
 func debugPrintWARNINGDefault() {
 	if v, e := getMinVer(runtime.Version()); e == nil && v <= ginSupportMinGoVer {
-		debugPrint(`[WARNING] Now Gin requires Go 1.13+.
+		debugPrint(`liteS 需要 Go 1.13及以上.
 
 `)
 	}
-	debugPrint(`[WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
-
-`)
+	debugPrint(`liteS Engine 实例化完成.`)
 }
 
-func debugPrintWARNINGNew() {
-	debugPrint(`[WARNING] Running in "debug" mode. Switch to "release" mode in production.
-- using env:	export GIN_MODE=release
-- using code:	gin.SetMode(gin.ReleaseMode)
-
-`)
-}
-
-func debugPrintWARNINGSetHTMLTemplate() {
-	debugPrint(`[WARNING] Since SetHTMLTemplate() is NOT thread-safe. It should only be called
-at initialization. ie. before any route is registered or the router is listening in a socket:
-
-	router := gin.Default()
-	router.SetHTMLTemplate(template) // << good place
-
-`)
-}
+//
+//func debugPrintWARNINGNew() {
+//	debugPrint(`[WARNING] Running in "debug" mode. Switch to "release" mode in production.
+//- using env:	export GIN_MODE=release
+//- using code:	gin.SetMode(gin.ReleaseMode)
+//
+//`)
+//}
+//
+//func debugPrintWARNINGSetHTMLTemplate() {
+//	debugPrint(`[WARNING] Since SetHTMLTemplate() is NOT thread-safe. It should only be called
+//at initialization. ie. before any route is registered or the router is listening in a socket:
+//
+//	router := gin.Default()
+//	router.SetHTMLTemplate(template) // << good place
+//
+//`)
+//}
 
 func debugPrintError(err error) {
 	if err != nil && IsDebugging() {
-		fmt.Fprintf(DefaultErrorWriter, "[GIN-debug] [ERROR] %v\n", err)
+		logger.Warn("[liteS] 告警 %v\n", err)
 	}
 }

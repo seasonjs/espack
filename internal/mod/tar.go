@@ -5,12 +5,12 @@ package mod
 import (
 	"archive/tar"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
+	"seasonjs/espack/internal/logger"
 	"strings"
 )
 
@@ -154,7 +154,7 @@ func (t *Tar) UnTar(source, destination string) error {
 		}
 		if err != nil {
 			if t.ContinueOnError || IsIllegalPathError(err) {
-				log.Printf("[ERROR] Reading file in tar archive: %v", err)
+				logger.Warn("在读取压缩文件过程中出现错误: %v", err)
 				continue
 			}
 			return fmt.Errorf("reading file in tar archive: %v", err)

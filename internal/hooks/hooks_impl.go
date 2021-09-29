@@ -9,6 +9,7 @@ import (
 	"seasonjs/espack/internal/builder/pkg/htmlPlugin"
 	"seasonjs/espack/internal/config"
 	"seasonjs/espack/internal/devServer"
+	"seasonjs/espack/internal/logger"
 	"seasonjs/espack/internal/plugins"
 	"sync"
 	"time"
@@ -76,7 +77,7 @@ func (c *hookContext) StartESBuild() *hookContext {
 		outputFiles := builder.NewEsBuilder(*c.configuration).GetOptions().EsbuildStarter().OutputFiles
 		c.result.OutputFiles = append(c.result.OutputFiles, outputFiles...)
 		expend := time.Since(c.timer)
-		fmt.Println("构建完成,共花费时间：", expend)
+		logger.Info("构建完成,共花费时间：%v", expend)
 		buildFinish <- true
 	}()
 	return c
@@ -93,5 +94,6 @@ func (c *hookContext) HoldAll() {
 	//监听所有信号
 	signal.Notify(sig)
 	//fmt.Println("start!")
-	fmt.Println("stop,signal : ", <-sig)
+
+	fmt.Println("接受到退出信号 : ", <-sig)
 }

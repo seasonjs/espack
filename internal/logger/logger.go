@@ -2,61 +2,110 @@ package logger
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/pkgerrors"
 	"os"
-	"time"
+	"seasonjs/espack/internal/utils"
+	"sync"
 )
 
-type LogLevel uint8
-
-const (
-	LogLevelSilent LogLevel = iota
-	LogLevelVerbose
-	LogLevelDebug
-	LogLevelInfo
-	LogLevelWarning
-	LogLevelError
+var (
+	once sync.Once
+	log  zerolog.Logger
 )
 
-type logger struct {
-	log zerolog.Logger
+func init() {
+	once.Do(func() {
+		newLogger()
+		if utils.Env.Dev() {
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		} else {
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		}
+
+	})
 }
 
-func NewLogger() *logger {
-	return &logger{log: zerolog.New(os.Stdout).With().Timestamp().Logger()}
-}
-
-// SetLogMode 设置需要的日志输出模式
-func (l *logger) SetLogMode() *logger {
-	return l
-}
-
-func (l *logger) Info(msg string, data ...interface{}) {
-	if l.log.GetLevel() <= zerolog.InfoLevel {
-		l.log.Info().Time("time", time.Now()).Msg(fmt.Sprintf(msg, data...))
+//time.FC3339     = "2006-01-02T15:04:05Z07:00"
+func newLogger() {
+	zerolog.ErrorStackFieldName = "call stack"
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
+	//time.FC3339     = "2006-01-02T15:04:05Z07:00"
+	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: "15:04"}
+	output.FormatLevel = func(i interface{}) string {
+		return fmt.Sprintf("[espack %s]", i)
 	}
-}
 
-func (l *logger) Warn(msg string, data ...interface{}) {
-	if l.log.GetLevel() <= zerolog.WarnLevel {
-		l.log.Warn().Time("time", time.Now()).Msg(fmt.Sprintf(msg, data...))
+	//output.FormatMessage = func(i interface{}) string {
+	//	return fmt.Sprintf("***%s****", i)
+	//	//return ""
+	//}
+	output.FormatFieldName = func(i interface{}) string {
+		return fmt.Sprintf("%s:", i)
+		//return ""
 	}
-}
-
-func (l *logger) Error(msg string, data ...interface{}) {
-	if l.log.GetLevel() <= zerolog.ErrorLevel {
-		l.log.Error().Time("time", time.Now()).Msg(fmt.Sprintf(msg, data...))
+	//output.FormatFieldValue= func(i interface{}) string {
+	//	return fmt.Sprintf("%s:", i)
+	//}
+	output.FormatErrFieldName = func(i interface{}) string {
+		return fmt.Sprintf("%s:", i)
+		//return ""
 	}
+	output.FormatErrFieldValue = func(i interface{}) string {
+		return fmt.Sprintf("%s\n", i)
+		//return ""
+	}
+	output.PartsExclude = append(output.PartsExclude, "time")
+	log = zerolog.New(output).With().Timestamp().Logger()
 }
 
-func (l *logger) Trace(err error) {
-	if err != nil {
-		l.log.Error().Time("time", time.Now()).Msg(err.Error())
+func Info(format string, data ...interface{}) {
+	log.Info().Msgf(format, data...)
+}
+
+func Warn(format string, data ...interface{}) {
+	log.Warn().Msgf(format, data...)
+}
+
+func Error(format string, data ...interface{}) {
+
+	log.Error().Msgf(format, data...)
+}
+
+func Fail(err error, msg string) {
+	type stackTracer interface {
+		StackTrace() errors.StackTrace
+	}
+	e, ok := err.(stackTracer)
+	if !ok {
 		return
 	}
+	if utils.Env.Dev() {
+		log.Fatal().Err(err).Msg(msg)
+		for _, frame := range e.StackTrace() {
+			fmt.Printf("%+s:%d\r\n", frame, frame)
+		}
+	} else {
+		log.Fatal().Err(err).Msg(msg)
+	}
+}
 
-	level := l.log.GetLevel()
-
-	if level <= zerolog.ErrorLevel {
+func Trace(err error, msg string) {
+	type stackTracer interface {
+		StackTrace() errors.StackTrace
+	}
+	e, ok := err.(stackTracer)
+	if !ok {
+		return
+	}
+	//It's mean when env=dev just print track
+	if utils.Env.Dev() {
+		log.Error().Msg(msg)
+		for _, frame := range e.StackTrace() {
+			fmt.Printf("%+s:%d\r\n", frame, frame)
+		}
+	} else {
+		log.Error().Stack().Err(err).Msg(msg)
 	}
 }

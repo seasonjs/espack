@@ -65,7 +65,7 @@ func NewPlugin(opt interface{}) *interface{} {
 
 [_] 逐步解决代码中的TODO注释
 
-[_] 调研npm代替方案 js.mod -> go mod like?
+[√] 调研npm代替方案 js.mod -> go mod like?
 
 ```
 |
@@ -78,6 +78,7 @@ func NewPlugin(opt interface{}) *interface{} {
 |__ [√] 调研go.mod 解析生成原理
 |
 |__ [_] 具体实施 大概
+
     |__ [√]获取元数据与
     |__ [√]解决循环依赖
     |__ [√]根据js.mod依赖生成js.sum
@@ -108,7 +109,7 @@ gopkg.in/yaml.v2 v2.4.0
 ```
     |__ [√]完美运行起gin的lite版 
     |__ [√]移除过重依赖
-    |__ [_]内部日志改造
+    |__ [√]内部日志改造
     |__ [_]内部代码调整
     |__ [_]完全改造为适合从内存/静态文件夹获取的server
 ```

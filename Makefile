@@ -25,13 +25,13 @@ setup:
 	mkdir -p build/windows
 
 build-linux: setup
-	GOARCH=amd64 GOOS=linux go build ${LDFLAGS} -o build/linux/${TARGET_EXEC}
+	GOARCH=amd64 GOOS=linux go build ${LDFLAGS} -o build/linux/${TARGET_EXEC} ./cmd
 
 build-osx: setup
-	GOARCH=amd64 GOOS=darwin go build ${LDFLAGS} -o build/osx/${TARGET_EXEC}
+	GOARCH=amd64 GOOS=darwin go build ${LDFLAGS} -o build/osx/${TARGET_EXEC} ./cmd
 
 build-windows: setup
-	GOARCH=amd64 GOOS=windows go build ${LDFLAGS} -o build/windows/${TARGET_EXEC}.exe
+	GOARCH=amd64 GOOS=windows go build ${LDFLAGS} -o build/windows/${TARGET_EXEC}.exe ./cmd
 
 help:
 	@echo "make 格式化go代码 并编译生成二进制文件"

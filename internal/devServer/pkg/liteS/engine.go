@@ -346,7 +346,7 @@ func (engine *Engine) Run(addr ...string) (err error) {
 	}
 
 	address := resolveAddress(addr)
-	debugPrint("Listening and serving HTTP on %s", address)
+	debugPrint("liteS 启动, 监听端口: %s", address)
 	err = http.ListenAndServe(address, engine)
 	return
 }
@@ -411,7 +411,7 @@ func parseIP(ip string) net.IP {
 // It is a shortcut for http.ListenAndServeTLS(addr, certFile, keyFile, router)
 // Note: this method will block the calling goroutine indefinitely unless an error happens.
 func (engine *Engine) RunTLS(addr, certFile, keyFile string) (err error) {
-	debugPrint("Listening and serving HTTPS on %s", addr)
+	debugPrint("liteS 启用Https,监听端口: %s", addr)
 	defer func() { debugPrintError(err) }()
 
 	err = engine.parseTrustedProxies()
@@ -471,7 +471,7 @@ func (engine *Engine) RunFd(fd int) (err error) {
 // RunListener attaches the router to a http.Server and starts listening and serving HTTP requests
 // through the specified net.Listener
 func (engine *Engine) RunListener(listener net.Listener) (err error) {
-	debugPrint("Listening and serving HTTP on listener what's bind with address@%s", listener.Addr())
+	debugPrint("liteS 启用,监听地址: http://%s", listener.Addr())
 	defer func() { debugPrintError(err) }()
 
 	err = engine.parseTrustedProxies()

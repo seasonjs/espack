@@ -96,4 +96,5 @@ func (c *hookContext) HoldAll() {
 	//fmt.Println("start!")
 
 	fmt.Println("接受到退出信号 : ", <-sig)
+	os.Exit(1)
 }

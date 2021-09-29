@@ -3,6 +3,7 @@ package devServer
 import (
 	"github.com/evanw/esbuild/pkg/api"
 	"mime"
+	"net"
 	"net/http"
 	"path/filepath"
 	"seasonjs/espack/internal/devServer/pkg/liteS"
@@ -83,6 +84,7 @@ func (c *ctx) Run() {
 
 			g.String(http.StatusNotFound, "资源未找到...")
 		})
-		r.Run()
+		ln, _ := net.Listen("tcp", "127.0.0.1:8080")
+		r.RunListener(ln)
 	}()
 }

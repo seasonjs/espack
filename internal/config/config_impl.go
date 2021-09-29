@@ -36,7 +36,7 @@ func (c *ConfigurationPoints) ReadFile(arg ...interface{}) *ConfigurationPoints 
 		}
 	} else {
 		path, _ = utils.FS.ConvertPath("./espack.config.json")
-		logger.Info(path)
+		logger.Info("使用默认配置路径：%s", path)
 	}
 	//生成工作目录路径
 	if len(c.Context) <= 0 {

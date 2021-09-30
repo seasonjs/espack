@@ -21,14 +21,18 @@ clean:
 
 setup:
 	mkdir -p build/linux
-	mkdir -p build/osx
+	mkdir -p build/osx/amd64
+	mkdir -p build/osx/arm64
 	mkdir -p build/windows
 
 build-linux: setup
 	GOARCH=amd64 GOOS=linux go build ${LDFLAGS} -o build/linux/${TARGET_EXEC} ./cmd
 
 build-osx: setup
-	GOARCH=amd64 GOOS=darwin go build ${LDFLAGS} -o build/osx/${TARGET_EXEC} ./cmd
+	GOARCH=amd64 GOOS=darwin go build ${LDFLAGS} -o build/osx/amd64/${TARGET_EXEC} ./cmd
+
+build-osx-arm64: setup
+	GOARCH=arm64 GOOS=darwin go build ${LDFLAGS} -o build/osx/arm64/${TARGET_EXEC} ./cmd
 
 build-windows: setup
 	GOARCH=amd64 GOOS=windows go build ${LDFLAGS} -o build/windows/${TARGET_EXEC}.exe ./cmd

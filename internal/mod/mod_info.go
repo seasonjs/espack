@@ -99,29 +99,33 @@ func (i *modInfo) FetchModInfo() *modInfo {
 		return i
 	}
 	defer rsp.Body.Close()
-	decoder := json.NewDecoder(rsp.Body)
-	//通过mm解析json
-	mm := modMeta{}
-	err = decoder.Decode(&mm)
-	if err != nil {
-		//TODO:重试，不要退出
-		logger.Warn("解析包%s的元数据失败", i.Registry)
-		return i
-	}
-	i.Shasum = mm.Dist.Shasum
-	i.integrity = mm.Dist.Integrity
-	if len(mm.Dependencies) > 0 {
-		for name, version := range mm.Dependencies {
-			// npm 的package.json 存在版本方言 ：）
-			v := utils.Version.FindVersionStr(version)
-			//最懒方案 ^^ 如果存在版本方言则选择拉取最新的版本
-			if len(v[""]) == 0 {
-				i.Require[name] = i.FetchLastVersion(name)
-				continue
-			}
-			i.Require[name] = v[""]
-
+	if rsp.StatusCode == http.StatusOK {
+		decoder := json.NewDecoder(rsp.Body)
+		//通过mm解析json
+		mm := modMeta{}
+		err = decoder.Decode(&mm)
+		if err != nil {
+			//TODO:重试，不要退出
+			logger.Warn("解析包%s的元数据失败", i.Registry)
+			return i
 		}
+		i.Shasum = mm.Dist.Shasum
+		i.integrity = mm.Dist.Integrity
+		if len(mm.Dependencies) > 0 {
+			for name, version := range mm.Dependencies {
+				// npm 的package.json 存在版本方言 ：）
+				v := utils.Version.FindVersionStr(version)
+				//最懒方案 ^^ 如果存在版本方言则选择拉取最新的版本
+				if len(v[""]) == 0 {
+					i.Require[name] = i.FetchLastVersion(name)
+					continue
+				}
+				i.Require[name] = v[""]
+
+			}
+		}
+	} else {
+		//TODO:retry
 	}
 	//if len(mm.DevDependencies) > 0 {
 	//	for name, version := range mm.DevDependencies {
@@ -149,16 +153,21 @@ func (i *modInfo) FetchLastVersion(name string) string {
 		logger.Warn("获取包最新版本失败，%s", err.Error())
 	}
 	defer rsp.Body.Close()
-	decoder := json.NewDecoder(rsp.Body)
-	rsp.Header.Get("")
-	//通过mm解析json
-	dm := disMeta{}
-	err = decoder.Decode(&dm)
-	if err != nil {
-		//TODO:重试，不要退出
-		logger.Warn("包最新版本%s的信息解析失败", i.Registry)
+	if rsp.StatusCode == http.StatusOK {
+		decoder := json.NewDecoder(rsp.Body)
+		rsp.Header.Get("")
+		//通过mm解析json
+		dm := disMeta{}
+		err = decoder.Decode(&dm)
+		if err != nil {
+			//TODO:重试，不要退出
+			logger.Warn("包最新版本%s的信息解析失败", i.Registry)
+		}
+		return dm.Latest
+	} else {
+		//TODO： retry
 	}
-	return dm.Latest
+	return ""
 }
 
 //TODO: 是否要进行 版本方言判断？ https://docs.npmjs.com/cli/v7/configuring-npm/package-json#dependencies

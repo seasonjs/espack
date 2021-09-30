@@ -31,9 +31,6 @@ func NewJsSum() *jsSum {
 
 // FetchRootModMeta 获取根js.mod的meta数据
 func (j *jsSum) FetchRootModMeta(require map[string]string) *jsSum {
-	//TODO:等测试结束移除该接口
-	//path, _ := utils.FS.ConvertPath("../case/js.mod")
-	//require := NewJsMod().ReadFile(path).Require
 	for name, version := range require {
 		key := fmt.Sprintf("%s@%s", name, version)
 		////如果有这个包则不需要在获取它的信息
@@ -112,6 +109,12 @@ func (j *jsSum) WriteFile(path ...string) *jsSum {
 	if err != nil {
 		panic(err)
 	}
+	return j
+}
+
+// WriteDB 将元数据写入数据库 TODO
+func (j *jsSum) WriteDB(path ...string) *jsSum {
+
 	return j
 }
 

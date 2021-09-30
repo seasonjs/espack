@@ -163,6 +163,35 @@ func (t *Tar) UnTar(source, destination string) error {
 
 	return nil
 }
+func (t *Tar) IOUnTar(reader io.ReadCloser, destination string) error {
+	if !fileExists(destination) && t.MkdirAll {
+		err := mkdir(destination, 0755)
+		if err != nil {
+			return fmt.Errorf("preparing destination: %v", err)
+		}
+	}
+	err := t.Open(reader, 0)
+	if err != nil {
+		return fmt.Errorf("opening tar archive for reading: %v", err)
+	}
+	defer t.Close()
+
+	for {
+		err := t.untarNext(destination)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			if t.ContinueOnError || IsIllegalPathError(err) {
+				logger.Warn("在读取压缩文件过程中出现错误: %v", err)
+				continue
+			}
+			return fmt.Errorf("reading file in tar archive: %v", err)
+		}
+	}
+
+	return nil
+}
 
 //addTopLevelFolder scans the files contained inside
 // the tarball named sourceArchive and returns a modified
@@ -327,7 +356,8 @@ func (t *Tar) Close() error {
 // NewTar returns a new, default instance ready to be customized and used.
 func NewTar() *Tar {
 	return &Tar{
-		MkdirAll: true,
+		MkdirAll:          true,
+		OverwriteExisting: true,
 	}
 }
 

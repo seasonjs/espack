@@ -13,7 +13,7 @@ import (
 func TestMod_UnTar(t *testing.T) {
 	in, _ := utils.FS.ConvertPath("../case/yarn-0.1.0.tgz")
 	out, _ := utils.FS.ConvertPath("../case/espack/mod")
-	err := NewTarGz().UnTarGz(in, out)
+	err := DefaultTarGz().UnTarGz(in, out)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -64,4 +64,25 @@ func TestVersion_Reg(t *testing.T) {
 	t.Log(results)
 	//return result
 	//var myExp = regexp.MustCompile(`(?P<first>\d+)\.(\d+).(?P<second>\d+)`)
+}
+
+func TestDownloadFile(t *testing.T) {
+	path, _ := utils.FS.ConvertPath("../case/node_modules/react")
+	resp, _ := http.Get("https://registry.npmjs.org/react/-/react-17.0.2.tgz")
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		err := DefaultTarGz().IOUnTarGz(resp.Body, path)
+		if err != nil {
+			fmt.Println(err)
+		}
+		//bodyString := string(bodyBytes)
+		fmt.Println("下载并解压成功")
+	}
+}
+func TestDownloadFile2(t *testing.T) {
+	path, _ := utils.FS.ConvertPath("../case/node_modules")
+	jmP, _ := utils.FS.ConvertPath("../case/js.mod")
+	filePath, _ := utils.FS.ConvertPath("../case/js.sum")
+	NewMod().AnalyzeDependencies(jmP, filePath).DownLoadDependencies(path)
 }

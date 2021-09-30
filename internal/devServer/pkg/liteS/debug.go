@@ -9,7 +9,6 @@ import (
 	"os"
 	"runtime"
 	"seasonjs/espack/internal/logger"
-	"seasonjs/espack/internal/utils"
 	"strconv"
 	"strings"
 )
@@ -32,7 +31,8 @@ const ginSupportMinGoVer = 13
 // Use SetMode(gin.ReleaseMode) to disable debug mode.
 func IsDebugging() bool {
 	//return ginMode == debugCode
-	return utils.Env.Dev()
+	//return utils.Env.Dev()
+	return true
 }
 
 // DebugPrintRouteFunc indicates debug log output format.

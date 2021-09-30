@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import "seasonjs/espack/internal/mod"
 
 func EsPackGet(subArgs []string) {
-	fmt.Println(subArgs)
+	if len(subArgs) == 0 {
+		mod.NewMod().AnalyzeDependencies().DownLoadDependencies()
+	}
 }

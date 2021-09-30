@@ -14,10 +14,13 @@ type TarGz struct {
 
 	// The compression level to use, as described
 	// in the compress/gzip package.
-	CompressionLevel int
+	//CompressionLevel int
 
 	// Disables parallel gzip.
 	//SingleThreaded bool
+
+	readerWrapFn func(io.Reader) (io.Reader, error)
+	writerWrapFn func(io.Writer) (io.Writer, error)
 }
 
 func (tgz *TarGz) UnTarGz(source, destination string) error {
@@ -25,16 +28,18 @@ func (tgz *TarGz) UnTarGz(source, destination string) error {
 	return tgz.Tar.UnTar(source, destination)
 }
 
+func (tgz *TarGz) IOUnTarGz(reader io.ReadCloser, destination string) error {
+	tgz.wrapReader()
+	return tgz.Tar.IOUnTar(reader, destination)
+}
+
 // 舍弃并发方案
 func (tgz *TarGz) wrapReader() {
 	var gzr io.ReadCloser
+
 	tgz.Tar.readerWrapFn = func(r io.Reader) (io.Reader, error) {
 		var err error
-		//if tgz.SingleThreaded {
 		gzr, err = gzip.NewReader(r)
-		//} else {
-		//	gzr, err = pgzip.NewReader(r)
-		//}
 		return gzr, err
 	}
 	tgz.Tar.cleanupWrapFn = func() {
@@ -42,9 +47,14 @@ func (tgz *TarGz) wrapReader() {
 	}
 }
 
-func NewTarGz() *TarGz {
+// DefaultTarGz 针对npm下载的默认设置，一个有问题需要调整下载参数
+func DefaultTarGz() *TarGz {
 	return &TarGz{
-		CompressionLevel: gzip.DefaultCompression,
-		Tar:              NewTar(),
+		//CompressionLevel: gzip.DefaultCompression,
+		Tar: &Tar{
+			MkdirAll:          true,
+			OverwriteExisting: true,
+			StripComponents:   1,
+		},
 	}
 }

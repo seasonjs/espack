@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"seasonjs/espack/internal/devServer/pkg/bytesconv"
+	"github.com/seasonjs/espack/internal/devServer/pkg/bytesconv"
 )
 
 // String contains the given interface object slice and its format.

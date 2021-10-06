@@ -5,10 +5,10 @@
 package liteS
 
 import (
+	"github.com/seasonjs/espack/internal/logger"
 	"io"
 	"os"
 	"runtime"
-	"seasonjs/espack/internal/logger"
 	"strconv"
 	"strings"
 )

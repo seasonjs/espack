@@ -2,8 +2,8 @@ package hooks
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
-	"seasonjs/espack/internal/config"
-	"seasonjs/espack/internal/plugins"
+	"github.com/seasonjs/espack/internal/config"
+	"github.com/seasonjs/espack/internal/plugins"
 	"time"
 )
 

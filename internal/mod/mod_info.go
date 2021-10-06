@@ -3,9 +3,9 @@ package mod
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/seasonjs/espack/internal/logger"
+	"github.com/seasonjs/espack/internal/utils"
 	"net/http"
-	"seasonjs/espack/internal/logger"
-	"seasonjs/espack/internal/utils"
 	"time"
 )
 

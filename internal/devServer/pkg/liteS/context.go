@@ -7,6 +7,7 @@ package liteS
 import (
 	"errors"
 	"fmt"
+	"github.com/seasonjs/espack/internal/devServer/pkg/render"
 	"io"
 	"io/ioutil"
 	"math"
@@ -15,7 +16,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"seasonjs/espack/internal/devServer/pkg/render"
 	"strings"
 	"sync"
 	"time"

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/pkg/errors"
+	"github.com/seasonjs/espack/internal/logger"
+	"github.com/seasonjs/espack/internal/utils"
 	"os"
 	"regexp"
-	"seasonjs/espack/internal/logger"
-	"seasonjs/espack/internal/utils"
 	"strings"
 )
 

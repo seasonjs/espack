@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
-	"seasonjs/espack/internal/config"
+	"github.com/seasonjs/espack/internal/config"
 	"sync"
 )
 

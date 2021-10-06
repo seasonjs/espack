@@ -1,10 +1,10 @@
 package mod
 
 import (
+	"github.com/seasonjs/espack/internal/logger"
+	"github.com/seasonjs/espack/internal/utils"
 	"net/http"
 	"path/filepath"
-	"seasonjs/espack/internal/logger"
-	"seasonjs/espack/internal/utils"
 )
 
 //npm 元数据获取 https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md

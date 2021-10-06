@@ -2,9 +2,9 @@ package builder
 
 import (
 	"fmt"
+	"github.com/seasonjs/espack/internal/config"
+	"github.com/seasonjs/espack/internal/utils"
 	"path/filepath"
-	"seasonjs/espack/internal/config"
-	"seasonjs/espack/internal/utils"
 	"testing"
 )
 

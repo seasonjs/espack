@@ -2,10 +2,10 @@ package htmlPlugin
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/seasonjs/espack/internal/config"
+	"github.com/seasonjs/espack/internal/plugins"
+	"github.com/seasonjs/espack/internal/utils"
 	"io/ioutil"
-	"seasonjs/espack/internal/config"
-	"seasonjs/espack/internal/plugins"
-	"seasonjs/espack/internal/utils"
 )
 
 // HtmlPluginOption https://github.com/jantimon/html-webpack-plugin#options TODO:考虑剩下的要支持哪些配置

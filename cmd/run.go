@@ -1,6 +1,6 @@
 package main
 
-import "seasonjs/espack/internal/hooks"
+import "github.com/seasonjs/espack/internal/hooks"
 
 // PrintRunHelp espack run nil 或者espack run 不识别的标志
 func PrintRunHelp() {

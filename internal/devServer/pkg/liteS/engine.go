@@ -6,11 +6,11 @@ package liteS
 
 import (
 	"fmt"
+	"github.com/seasonjs/espack/internal/devServer/pkg/bytesconv"
 	"net"
 	"net/http"
 	"os"
 	"path"
-	"seasonjs/espack/internal/devServer/pkg/bytesconv"
 	"strings"
 	"sync"
 )

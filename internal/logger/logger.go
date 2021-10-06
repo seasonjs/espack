@@ -5,8 +5,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
+	"github.com/seasonjs/espack/internal/utils"
 	"os"
-	"seasonjs/espack/internal/utils"
 	"sync"
 )
 

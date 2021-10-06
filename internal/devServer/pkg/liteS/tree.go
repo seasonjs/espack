@@ -6,8 +6,8 @@ package liteS
 
 import (
 	"bytes"
+	"github.com/seasonjs/espack/internal/devServer/pkg/bytesconv"
 	"net/url"
-	"seasonjs/espack/internal/devServer/pkg/bytesconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"

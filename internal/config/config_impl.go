@@ -3,10 +3,10 @@ package config
 import (
 	"encoding/json"
 	"github.com/pkg/errors"
+	"github.com/seasonjs/espack/internal/logger"
+	"github.com/seasonjs/espack/internal/utils"
 	"os"
 	"path/filepath"
-	"seasonjs/espack/internal/logger"
-	"seasonjs/espack/internal/utils"
 )
 
 func NewConfigPoints(arg ...interface{}) *ConfigurationPoints {

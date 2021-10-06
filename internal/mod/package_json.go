@@ -3,9 +3,9 @@ package mod
 import (
 	"encoding/json"
 	"github.com/pkg/errors"
+	"github.com/seasonjs/espack/internal/logger"
+	"github.com/seasonjs/espack/internal/utils"
 	"os"
-	"seasonjs/espack/internal/logger"
-	"seasonjs/espack/internal/utils"
 )
 
 // TODO 需要理解package.json每个字段的概念 https://docs.npmjs.com/cli/v7/configuring-npm/package-json

@@ -3,8 +3,8 @@ package builder
 import (
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/pkg/errors"
-	"seasonjs/espack/internal/config"
-	"seasonjs/espack/internal/logger"
+	"github.com/seasonjs/espack/internal/config"
+	"github.com/seasonjs/espack/internal/logger"
 )
 
 type esbuild struct {

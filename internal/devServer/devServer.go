@@ -2,12 +2,12 @@ package devServer
 
 import (
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/seasonjs/espack/internal/devServer/pkg/liteS"
+	"github.com/seasonjs/espack/internal/utils"
 	"mime"
 	"net"
 	"net/http"
 	"path/filepath"
-	"seasonjs/espack/internal/devServer/pkg/liteS"
-	"seasonjs/espack/internal/utils"
 	"strings"
 )
 

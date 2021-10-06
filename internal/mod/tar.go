@@ -5,12 +5,12 @@ package mod
 import (
 	"archive/tar"
 	"fmt"
+	"github.com/seasonjs/espack/internal/logger"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
-	"seasonjs/espack/internal/logger"
 	"strings"
 )
 

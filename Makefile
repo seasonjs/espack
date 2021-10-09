@@ -1,13 +1,13 @@
 BUILD_ENV := CGO_ENABLED=0
 ESPACK_VERSION = $(shell cat version.txt)
 BUILD = `date +%FT%T%z`
-LDFLAGS = -ldflags "-w -s -X main.Version=${VERSION} -X main.Build=${BUILD}"
+LDFLAGS = -ldflags "-w -s -X main.Version=${ESPACK_VERSION} -X main.Build=${BUILD_ENV}"
 
 TARGET_EXEC := espack
 
-.PHONY:clean setup build-linux build-osx build-windows
+.PHONY:clean setup build-linux build-osx build-windows build-osx-arm64
 
-all:clean setup build-linux build-osx build-windows
+all:clean setup build-linux build-osx build-windows build-osx-arm64
 
 run:
 

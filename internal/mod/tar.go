@@ -1,7 +1,14 @@
-package mod
-
+// Copyright (c) 2016 Matthew Holt
+// Use of this source code is governed by a MIT style
+// license that can be found in https://github.com/mholt/archiver/blob/master/LICENSE
+// Copyright (c) 2021 seasonjs Core Team
+// Use of this source code is governed by a MIT style
+// license that can be found in https://github.com/seasonjs/espack/blob/main/LICENSE
 //截取修改自:
 //https://github.com/mholt/archiver/blob/master/tar.go
+
+package mod
+
 import (
 	"archive/tar"
 	"fmt"

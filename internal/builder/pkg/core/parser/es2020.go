@@ -1,4 +1,4 @@
-package core
+package parser
 
 type LiteralES2020 struct {
 	Literal

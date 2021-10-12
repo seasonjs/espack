@@ -1,9 +1,10 @@
-package core
+package parser
 
 type SourceType string
 
 const (
 	ScriptType SourceType = "script"
+	ModuleType SourceType = "module"
 )
 
 type ProgramES2015 struct {

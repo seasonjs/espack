@@ -1,3 +1,3 @@
-package core
+package parser
 
 const LogicalNullishAssignment AssignmentOperators = "??="

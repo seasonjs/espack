@@ -1,7 +1,9 @@
-package core
+package parser
 
 //类型声明基于 https://github.com/estree/estree/blob/master/es5.md
 //第二参考文档 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators
+// babel 是在node 节点扩展属性，但是这个方法go是肯定不合理的，所以我们只能挨个解析
+// 与babel 类似的流程，可以先解析成类型再递进的深入逐渐解析到最终类型
 
 type JsType string
 
@@ -50,7 +52,7 @@ const (
 
 type KindType string
 
-const VarType KindType = "var"
+const VarKind KindType = "var"
 
 type Position struct {
 	line   int // >= 1
@@ -58,6 +60,7 @@ type Position struct {
 }
 
 type SourceLocation struct {
+	//TODO 是否需要替换成[][]byte
 	source string
 	start  Position
 	end    Position
@@ -69,12 +72,22 @@ type Node struct {
 	loc SourceLocation
 }
 
+func (n *Node) name() {
+
+}
+
 type Expression struct{ Node }
 
 type Pattern struct{ Node }
 
 type Statement struct{ Node }
 
+// ParseStatement 解析为具体的Statement 暂时不考虑修饰器
+//func (s *Statement) ParseStatement() {
+//	node := Node{}
+//}
+
+// Identifier 变量名称，函数名称等一系列名称的定义
 type Identifier struct {
 	Expression
 	Pattern
@@ -94,11 +107,16 @@ type RegExpLiteral struct {
 	}
 }
 
+// Program ast 的入口
 type Program struct {
 	Node
-	body interface{} //body [ Directive | Statement ]
+	//TODO 是否需要转化为map
+	body []interface{} //body [ Directive | Statement ]
 
 }
+
+// Directive 存放指令代码类似 "use strict"这样的 或者是#！这样的就是指令
+// TODO 增加对指令文件的判断
 type Directive struct {
 	expression Literal
 	directive  string
@@ -106,8 +124,8 @@ type Directive struct {
 
 type FunctionBody struct {
 	BlockStatement
-	body interface{}
-	//body  [ Directive | Statement ]
+	body interface{} //body  [ Directive | Statement ]
+
 }
 
 type BlockStatement struct {
@@ -120,6 +138,10 @@ type Function struct {
 	id     Identifier
 	params []Pattern
 	body   FunctionBody
+}
+
+func (s *Statement) ParseFunction() {
+
 }
 
 type DebuggerStatement struct {

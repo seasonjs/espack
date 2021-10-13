@@ -81,64 +81,40 @@ type ES5 struct {
 }
 
 func NewESTree(v ESVersion, gv ESGVersion, extends ...ESExtends) ESTree {
-
-	// 如果版本相同则不进行Polyfill
-	//TODO 如此继承是否在go中会有性能问题？
-	switch v {
-	case VES5:
-		t := &ES5{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2015:
-		t := &ES2015{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2016:
-		t := &ES2016{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2017:
-		t := &ES2017{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2018:
-		t := &ES2018{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2019:
-		t := &ES2019{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2020:
-		t := &ES2020{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2021:
-		t := &ES2021{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VES2022:
-		t := &ES2022{}
-		t.SetTargetVersion(gv)
-		t.SetESExtends(extends...)
-		return t
-	case VTypeScript:
-		logger.Fail(fmt.Errorf("暂不支持对ts的解析"), "estree 错误终止解析")
-		return nil
-	default:
-		logger.Info("未定义解析版本,将启用默认设置和自动推断模式进行解析")
-		//TODO 需要在这里进行推断
-		return &ES2022{}
+	versionToInstanceMap := map[ESVersion]ES5Interface{
+		VES5:    &ES5{},
+		VES2015: &ES2015{},
+		VES2016: &ES2016{},
+		VES2017: &ES2017{},
+		VES2018: &ES2018{},
+		VES2019: &ES2019{},
+		VES2020: &ES2020{},
+		VES2021: &ES2021{},
+		VES2022: &ES2022{},
 	}
 
+	instance, ok := versionToInstanceMap[v]
+	if ok {
+		instance.SetTargetVersion(gv)
+		instance.SetESExtends(extends...)
+		return instance
+	}
+
+	// map里面没有找到 额外判断
+	if v == VTypeScript {
+		logger.Fail(fmt.Errorf("暂不支持对ts的解析"), "estree 错误终止解析")
+		return nil
+	}
+
+	logger.Info("未定义解析版本,将启用默认设置和自动推断模式进行解析")
+	//TODO 需要在这里进行推断
+	return &ES2022{}
+}
+
+type ES5Interface interface {
+	ESTree
+	SetTargetVersion(ESGVersion)
+	SetESExtends(...ESExtends)
 }
 
 //======================= getter setter ===========================

@@ -40,3 +40,7 @@ func AsDecimalLiteral(b []byte) bool {
 	}
 	return i == len(b)
 }
+
+//func CreateToken(name []byte) string {
+//	return strconv.FormatUint(name)
+//}

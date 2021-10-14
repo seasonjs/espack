@@ -1,6 +1,9 @@
 // Copyright (c) 2015 Taco de Wolff.
 // Use of this source code is governed by a MIT style
 // license that can be found in https://github.com/tdewolff/parse/blob/master/LICENSE.md
+// Copyright (c) 2021 seasonjs Core Team
+// Use of this source code is governed by a MIT style
+// license that can be found in https://github.com/seasonjs/espack/blob/main/LICENSE
 
 // Package js is an ECMAScript5.1 lexer following the specifications at http://www.ecma-international.org/ecma-262/5.1/.
 
@@ -35,6 +38,17 @@ func IsIdentifierEnd(b []byte) bool {
 
 ////////////////////////////////////////////////////////////////
 
+// Position 位置
+type Position struct {
+	line   int // >= 1
+	column int // >= 0
+}
+
+type Location struct {
+	startLoc Position
+	endLoc   Position
+}
+
 // Lexer is the state for the lexer.
 type Lexer struct {
 	r                  *in.Input
@@ -43,6 +57,9 @@ type Lexer struct {
 	prevNumericLiteral bool
 	level              int
 	templateLevels     []int
+	loc                Location
+	pos                int
+	curLine            int
 }
 
 // NewLexer returns a new Lexer for a given io.Reader.
@@ -52,6 +69,8 @@ func NewLexer(r *in.Input) *Lexer {
 		prevLineTerminator: true,
 		level:              0,
 		templateLevels:     []int{},
+		pos:                0,
+		curLine:            1,
 	}
 }
 
@@ -82,8 +101,8 @@ func (l *Lexer) RegExp() (TokenType, []byte) {
 	return ErrorToken, nil
 }
 
-// Next returns the next Token. It returns ErrorToken when an error was encountered. Using Err() one can retrieve the error message.
-func (l *Lexer) Next() (TokenType, []byte) {
+// Next 返回一个Token状态信息
+func (l *Lexer) Next() (TokenType, []byte, Location) {
 	prevLineTerminator := l.prevLineTerminator
 	l.prevLineTerminator = false
 
@@ -109,122 +128,262 @@ func (l *Lexer) Next() (TokenType, []byte) {
 	c := l.r.Peek(0)
 	switch c {
 	case ' ', '\t', '\v', '\f':
+		start := l.curPosition()
 		l.r.Move(1)
 		for l.consumeWhitespace() {
 		}
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
 		l.prevLineTerminator = prevLineTerminator
-		return WhitespaceToken, l.r.Shift()
+		return WhitespaceToken, l.r.Shift(), l.loc
 	case '\n', '\r':
+		l.curLine++
+		start := l.curPosition()
 		l.r.Move(1)
 		for l.consumeLineTerminator() {
+			l.curLine++
+		}
+		end := l.curPosition()
+		l.pos = 0
+		l.loc = Location{
+			start, end,
 		}
 		l.prevLineTerminator = true
-		return LineTerminatorToken, l.r.Shift()
+		return LineTerminatorToken, l.r.Shift(), l.loc
 	case '>', '=', '!', '+', '*', '%', '&', '|', '^', '~', '?':
+		start := l.curPosition()
+
 		if tt := l.consumeOperatorToken(); tt != ErrorToken {
-			return tt, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return tt, l.r.Shift(), l.loc
 		}
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
+		start := l.curPosition()
+
 		if tt := l.consumeNumericToken(); tt != ErrorToken || l.r.Pos() != 0 {
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
 			l.prevNumericLiteral = true
-			return tt, l.r.Shift()
+			return tt, l.r.Shift(), l.loc
 		} else if c == '.' {
 			l.r.Move(1)
 			if l.r.Peek(0) == '.' && l.r.Peek(1) == '.' {
 				l.r.Move(2)
-				return EllipsisToken, l.r.Shift()
+				end := l.curPosition()
+				l.loc = Location{
+					start, end,
+				}
+				return EllipsisToken, l.r.Shift(), l.loc
 			}
-			return DotToken, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return DotToken, l.r.Shift(), l.loc
 		}
 	case ',':
+		start := l.curPosition()
 		l.r.Move(1)
-		return CommaToken, l.r.Shift()
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return CommaToken, l.r.Shift(), l.loc
 	case ';':
+		start := l.curPosition()
 		l.r.Move(1)
-		return SemicolonToken, l.r.Shift()
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return SemicolonToken, l.r.Shift(), l.loc
 	case '(':
+		start := l.curPosition()
 		l.level++
 		l.r.Move(1)
-		return OpenParenToken, l.r.Shift()
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return OpenParenToken, l.r.Shift(), l.loc
 	case ')':
 		l.level--
 		l.r.Move(1)
-		return CloseParenToken, l.r.Shift()
+		return CloseParenToken, l.r.Shift(), l.loc
 	case '/':
+		start := l.curPosition()
 		if tt := l.consumeCommentToken(); tt != ErrorToken {
-			return tt, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return tt, l.r.Shift(), l.loc
 		} else if tt := l.consumeOperatorToken(); tt != ErrorToken {
-			return tt, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return tt, l.r.Shift(), l.loc
 		}
 	case '{':
+		start := l.curPosition()
 		l.level++
 		l.r.Move(1)
-		return OpenBraceToken, l.r.Shift()
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return OpenBraceToken, l.r.Shift(), l.loc
 	case '}':
+		start := l.curPosition()
 		l.level--
 		if len(l.templateLevels) != 0 && l.level == l.templateLevels[len(l.templateLevels)-1] {
-			return l.consumeTemplateToken(), l.r.Shift()
+			tt, end := l.consumeTemplateToken()
+			l.loc = Location{
+				start, end,
+			}
+			return tt, l.r.Shift(), l.loc
 		}
 		l.r.Move(1)
-		return CloseBraceToken, l.r.Shift()
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return CloseBraceToken, l.r.Shift(), l.loc
 	case ':':
+		start := l.curPosition()
 		l.r.Move(1)
-		return ColonToken, l.r.Shift()
+		l.r.Move(1)
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return ColonToken, l.r.Shift(), l.loc
 	case '\'', '"':
+		start := l.curPosition()
 		if l.consumeStringToken() {
-			return StringToken, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return StringToken, l.r.Shift(), l.loc
 		}
 	case ']':
+		start := l.curPosition()
 		l.r.Move(1)
-		return CloseBracketToken, l.r.Shift()
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return CloseBracketToken, l.r.Shift(), l.loc
 	case '[':
+		start := l.curPosition()
 		l.r.Move(1)
-		return OpenBracketToken, l.r.Shift()
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return OpenBracketToken, l.r.Shift(), l.loc
 	case '<', '-':
+		start := l.curPosition()
 		if l.consumeHTMLLikeCommentToken(prevLineTerminator) {
-			return CommentToken, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return CommentToken, l.r.Shift(), l.loc
 		} else if tt := l.consumeOperatorToken(); tt != ErrorToken {
-			return tt, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return tt, l.r.Shift(), l.loc
 		}
 	case '`':
+		start := l.curPosition()
 		l.templateLevels = append(l.templateLevels, l.level)
-		return l.consumeTemplateToken(), l.r.Shift()
+		tt, end := l.consumeTemplateToken()
+		l.loc = Location{
+			start, end,
+		}
+		return tt, l.r.Shift(), l.loc
 	case '#':
+		start := l.curPosition()
 		l.r.Move(1)
 		if l.consumeIdentifierToken() {
-			return PrivateIdentifierToken, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return PrivateIdentifierToken, l.r.Shift(), l.loc
 		}
-		return ErrorToken, nil
+		end := l.curPosition()
+		l.loc = Location{
+			start, end,
+		}
+		return ErrorToken, nil, l.loc
 	default:
+		start := l.curPosition()
 		if l.consumeIdentifierToken() {
 			if prevNumericLiteral {
+				end := l.curPosition()
+				l.loc = Location{
+					start, end,
+				}
 				l.err = in.NewErrorLexer(l.r, "unexpected identifier after number")
-				return ErrorToken, nil
+				return ErrorToken, nil, l.loc
 			} else if keyword, ok := Keywords[string(l.r.Lexeme())]; ok {
-				return keyword, l.r.Shift()
+				end := l.curPosition()
+				l.loc = Location{
+					start, end,
+				}
+				return keyword, l.r.Shift(), l.loc
 			}
-			return IdentifierToken, l.r.Shift()
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return IdentifierToken, l.r.Shift(), l.loc
 		}
 		if 0xC0 <= c {
 			if l.consumeWhitespace() {
 				for l.consumeWhitespace() {
 				}
+				end := l.curPosition()
+				l.loc = Location{
+					start, end,
+				}
 				l.prevLineTerminator = prevLineTerminator
-				return WhitespaceToken, l.r.Shift()
+				return WhitespaceToken, l.r.Shift(), l.loc
 			} else if l.consumeLineTerminator() {
 				for l.consumeLineTerminator() {
 				}
+				end := l.curPosition()
+				l.loc = Location{
+					start, end,
+				}
 				l.prevLineTerminator = true
-				return LineTerminatorToken, l.r.Shift()
+				return LineTerminatorToken, l.r.Shift(), l.loc
 			}
 		} else if c == 0 && l.r.Err() != nil {
-			return ErrorToken, nil
+			end := l.curPosition()
+			l.loc = Location{
+				start, end,
+			}
+			return ErrorToken, nil, l.loc
 		}
 	}
 
 	r, _ := l.r.PeekRune(0)
 	l.err = in.NewErrorLexer(l.r, "unexpected %s", in.Printable(r))
-	return ErrorToken, l.r.Shift()
+	return ErrorToken, l.r.Shift(), l.loc
 }
 
 ////////////////////////////////////////////////////////////////
@@ -232,6 +391,14 @@ func (l *Lexer) Next() (TokenType, []byte) {
 /*
 The following functions follow the specifications at http://www.ecma-international.org/ecma-262/5.1/
 */
+
+func (l *Lexer) curPosition() Position {
+	//pos 存在问题 ：）它取的不是正确的line
+	l.pos = l.pos + l.r.Pos()
+	return Position{
+		l.curLine, l.pos,
+	}
+}
 
 func (l *Lexer) consumeWhitespace() bool {
 	c := l.r.Peek(0)
@@ -665,7 +832,7 @@ func (l *Lexer) consumeRegExpToken() bool {
 	return true
 }
 
-func (l *Lexer) consumeTemplateToken() TokenType {
+func (l *Lexer) consumeTemplateToken() (TokenType, Position) {
 	// assume to be on ` or } when already within template
 	continuation := l.r.Peek(0) == '}'
 	l.r.Move(1)
@@ -675,16 +842,16 @@ func (l *Lexer) consumeTemplateToken() TokenType {
 			l.templateLevels = l.templateLevels[:len(l.templateLevels)-1]
 			l.r.Move(1)
 			if continuation {
-				return TemplateEndToken
+				return TemplateEndToken, l.curPosition()
 			}
-			return TemplateToken
+			return TemplateToken, l.curPosition()
 		} else if c == '$' && l.r.Peek(1) == '{' {
 			l.level++
 			l.r.Move(2)
 			if continuation {
-				return TemplateMiddleToken
+				return TemplateMiddleToken, l.curPosition()
 			}
-			return TemplateStartToken
+			return TemplateStartToken, l.curPosition()
 		} else if c == '\\' {
 			l.r.Move(1)
 			if c := l.r.Peek(0); c != 0 {
@@ -693,9 +860,9 @@ func (l *Lexer) consumeTemplateToken() TokenType {
 			continue
 		} else if c == 0 && l.r.Err() != nil {
 			if continuation {
-				return TemplateEndToken
+				return TemplateEndToken, l.curPosition()
 			}
-			return TemplateToken
+			return TemplateToken, l.curPosition()
 		}
 		l.r.Move(1)
 	}

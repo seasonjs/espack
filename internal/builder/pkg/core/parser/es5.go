@@ -1,14 +1,37 @@
 package parser
 
-//类型声明基于 https://github.com/estree/estree/blob/master/es5.md
+import (
+	"fmt"
+	"github.com/seasonjs/espack/internal/builder/pkg/core/in"
+	"github.com/seasonjs/espack/internal/builder/pkg/core/lexer"
+	"github.com/seasonjs/espack/internal/logger"
+	"io"
+)
+
+//类型声明基于 1. https://github.com/estree/estree/blob/master/es5.md
+//           2. https://github.com/cst/cst
 //第二参考文档 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators
 // babel 是在node 节点扩展属性，但是这个方法go是肯定不合理的，所以我们只能挨个解析
 // 与babel 类似的流程，可以先解析成类型再递进的深入逐渐解析到最终类型
+// babel 转义流程
+// parseTopLevel->parseProgram-> parseBlockBody->parseBlockOrModuleBlockBody->loop(parseStatement)
+//							|
+//							->parseInterpreterDirective
+//parseStatement-> parseDecorators
+//				|
+//				->parseStatementContent->switch(parseAnyStatement)
+// esbuild
+//Parse->newParser->NewLexer->toAST
+// espack 暂定的流程
+// Parse->NewLexer-> ParseProgram->ParseStatement
 
 type JsType string
 
+//这个地方的类型生命是否应该采用和tokenType一样的类型声明方式
 const (
-	IdentifierType            JsType = "Identifier" // Identifier type
+	CommentBlockType          JsType = "CommentBlock"
+	CommentLineType           JsType = "CommentLine"
+	IdentifierType            JsType = "Identifier"
 	LiteralType               JsType = "Literal"
 	ProgramType               JsType = "Program"
 	ExpressionStatementType   JsType = "ExpressionStatement"
@@ -48,39 +71,149 @@ const (
 	CallExpressionType        JsType = "CallExpression"
 	NewExpressionType         JsType = "NewExpression"
 	SequenceExpressionType    JsType = "SequenceExpression"
+
+	//ES2015
+
+	SuperType                    JsType = "super"
+	SpreadElementType            JsType = "SpreadElement"
+	ArrowFunctionExpressionType  JsType = "ArrowFunctionExpression"
+	YieldExpressionType          JsType = "YieldExpression"
+	ExpressionType               JsType = "Expression"
+	TaggedTemplateExpressionType JsType = "TaggedTemplateExpression"
+	TemplateElementType          JsType = "TemplateElement"
+	ObjectPatternType            JsType = "ObjectPattern"
+	ArrayPatternType             JsType = "ArrayPattern"
+	RestElementType              JsType = "RestElement"
+	AssignmentPatternType        JsType = "AssignmentPattern"
+	ClassBodyType                JsType = "ClassBody"
+	MethodDefinitionType         JsType = "MethodDefinition"
+	ClassDeclarationType         JsType = "ClassDeclaration"
+	ClassExpressionType          JsType = "ClassExpression"
+	MetaPropertyType             JsType = "MetaProperty"
+	ImportDeclarationType        JsType = "ImportDeclaration"
+	ImportSpecifierType          JsType = "ImportSpecifier"
+	ImportDefaultSpecifierType   JsType = "ImportDefaultSpecifier"
+	ImportNamespaceSpecifierType JsType = "ImportNamespaceSpecifier"
+	ExportNamedDeclarationType   JsType = "ExportNamedDeclaration"
+	ExportSpecifierType          JsType = "ExportSpecifier"
+	ExportDefaultDeclarationType JsType = "ExportDefaultDeclaration"
+	ExportAllDeclarationType     JsType = "ExportAllDeclaration"
+
+	//ES2017
+
+	AwaitExpressionType JsType = "AwaitExpression"
+
+	//ES2020
+
+	ChainExpressionType  JsType = "ChainExpression"
+	ImportExpressionType JsType = "ImportExpression"
+
+	//ES2022
+
+	PropertyDefinitionType JsType = "PropertyDefinition"
+	PrivateIdentifierType  JsType = "PrivateIdentifier"
+	StaticBlockType        JsType = "StaticBlock"
 )
 
 type KindType string
 
 const VarKind KindType = "var"
 
-type Position struct {
-	line   int // >= 1
-	column int // >= 0
+// Comment 注释基本类型 根据 estree的已有讨论，https://github.com/estree/estree/issues/41
+// 注释需要单独处理并挂载在Node上，这里的Comment 结构我会跟babel的保持基本一致
+type Comment struct {
 }
 
-type SourceLocation struct {
-	//TODO 是否需要替换成[][]byte
-	source string
-	start  Position
-	end    Position
-}
+//===================================================================================
 
 //Node objects
 type Node struct {
-	jsT JsType
-	loc SourceLocation
+	lexer.Lexer
+	jsT              JsType
+	leadingComments  []Comment
+	trailingComments []Comment
+	innerComments    []Comment
 }
 
-func (n *Node) name() {
+//// NewNode 所有节点程序都可以被视为Node
+//func NewNode(lex lexer.Lexer) *Node {
+//	node := &Node{}
+//	node.Lexer = lex
+//	return node
+//}
 
+// StartNode 从头开始识别为Node
+func StartNode(lex lexer.Lexer) *Node {
+	node := &Node{}
+	node.Lexer = lex
+	return node
 }
 
+// StartNodeAt 从指定位置开始识别为Node 此方法会新建Node实例
+func (n *Node) StartNodeAt(loc lexer.SourceLocation) *Node {
+	node := &Node{}
+	node.Lexer = n.Lexer
+	node.Lexer.Loc = loc
+	//TODO 对注释进行拷贝
+	return node
+}
+
+// StartNodeAtNode StartLoc a new node with a previous node's location.
+func (n *Node) StartNodeAtNode(node Node) *Node {
+	return n.StartNodeAt(node.Loc)
+}
+
+func (n *Node) finishNodeAt(loc lexer.SourceLocation) {
+	n.Loc = loc
+}
+
+//func (n *Node) finishNode() {
+//	n.
+//}
+
+//==========================================================================================
+
+// Expression 表达式
 type Expression struct{ Node }
 
+func StartExpression(node Node) *Expression {
+	return &Expression{
+		node,
+	}
+}
+
+//===========================================================================================
+
+// Pattern 参数
 type Pattern struct{ Node }
 
+func StartPattern(node Node) Pattern {
+	return Pattern{
+		node,
+	}
+}
+
+type StatementLike interface{}
+
 type Statement struct{ Node }
+
+func StartStatement(node *Node) *Statement {
+	return &Statement{
+		*node,
+	}
+}
+func (s *Statement) ParseStatement() StatementLike {
+	switch s.Cache.TT {
+	case lexer.BreakToken:
+		return StartBreakStatement(s).ParseBreakStatement()
+	case lexer.ContinueToken:
+		return StartContinueStatement(s).ParseContinueStatement()
+	default:
+		return nil
+	}
+}
+
+//==================================================================================
 
 // ParseStatement 解析为具体的Statement 暂时不考虑修饰器
 //func (s *Statement) ParseStatement() {
@@ -89,10 +222,27 @@ type Statement struct{ Node }
 
 // Identifier 变量名称，函数名称等一系列名称的定义
 type Identifier struct {
-	Expression
-	Pattern
+	//Expression
+	//Pattern
+	Node
 	name string
 }
+
+func StartIdentifier(node *Node) *Identifier {
+	id := &Identifier{}
+	id.Node = *node
+	id.jsT = IdentifierType
+	return id
+}
+
+func (i *Identifier) ParseIdentifier() *Identifier {
+	if i.Cache.TT == lexer.IdentifierToken {
+		i.name = string(i.Cache.Text)
+	}
+	return nil
+}
+
+//==================================================================================
 
 type Literal struct {
 	Expression
@@ -107,13 +257,61 @@ type RegExpLiteral struct {
 	}
 }
 
+//==================================================================================
+
 // Program ast 的入口
 type Program struct {
 	Node
-	//TODO 是否需要转化为map
 	body []interface{} //body [ Directive | Statement ]
 
 }
+
+//func NewProgram() *Program {
+//	return &Program{}
+//}
+
+func StartProgram(node Node) Program {
+	return Program{
+		Node: node,
+	}
+}
+func (p *Program) ParseProgram(r *in.Input) {
+	//TODO 需要处理顶级注释
+	topLevelNode := Node{}
+	//不在顶层存储降低空间占用
+	//topLevelNode.tokenValue = r.Bytes()
+	//Line >=1
+
+	topLevelNode.Loc.StartLoc.Line = 1
+	// 这里因为没有调用文本解析所以初始化代码位置暂时不检查
+	//topLevelNode.finishNodeAt(r.Len(), Position{1, 0})
+	program := StartProgram(topLevelNode)
+
+	l := lexer.NewLexer(r)
+	topLevelNode.Lexer = *l
+	//TODO 处理前置指令
+	// 比如 #! node
+	//tt, text, loc := l.Next()
+	//if tt == lexer.CommaToken {
+	//
+	//}
+	for {
+		l.Next()
+		if l.Cache.TT == lexer.ErrorToken {
+			if l.Err() != io.EOF {
+				logger.Fail(fmt.Errorf("%s:%s:%v", l.Cache.Text, l.Err(), l.Cache.Loc), "Error on line")
+			}
+			return
+		}
+		node := topLevelNode.StartNodeAt(l.Cache.Loc)
+
+		stmt := StartStatement(node).ParseStatement()
+		program.body = append(program.body, stmt)
+	}
+
+}
+
+//==================================================================================
 
 // Directive 存放指令代码类似 "use strict"这样的 或者是#！这样的就是指令
 // TODO 增加对指令文件的判断
@@ -170,9 +368,42 @@ type BreakStatement struct {
 	label Identifier
 }
 
+func StartBreakStatement(s *Statement) *BreakStatement {
+	s.jsT = BreakStatementType
+	return &BreakStatement{
+		Statement: *s,
+	}
+}
+
+// ParseBreakStatement 解析 break 关键字
+// break [label];
+// label 可选
+// 与语句标签相关联的标识符。如果 break 语句不在一个循环或 switch 语句中，则该项是必须的。
+func (s *BreakStatement) ParseBreakStatement() BreakStatement {
+	s.Next()
+	// 这意味着Break有label
+	if s.Cache.TT != lexer.LineTerminatorToken {
+		n := s.StartNodeAt(s.Cache.Loc)
+		ider := StartIdentifier(n).ParseIdentifier()
+		s.label = *ider
+	}
+	return *s
+}
+
 type ContinueStatement struct {
 	Statement
 	label Identifier
+}
+
+func StartContinueStatement(s *Statement) *ContinueStatement {
+	s.jsT = ContinueStatementType
+	return &ContinueStatement{
+		Statement: *s,
+	}
+}
+
+func (c *ContinueStatement) ParseContinueStatement() ContinueStatement {
+	return *c
 }
 
 type IfStatement struct {

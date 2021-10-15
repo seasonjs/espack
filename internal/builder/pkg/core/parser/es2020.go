@@ -10,8 +10,6 @@ type BigIntLiteral struct {
 	bigint string
 }
 
-const ChainExpressionType JsType = "ChainExpression"
-
 type ChainExpression struct {
 	Expression
 	expression ChainElement
@@ -31,8 +29,6 @@ type MemberExpressionES2020 struct {
 	MemberExpressionES2015
 	ChainElement
 }
-
-const ImportExpressionType JsType = "ImportExpression"
 
 type ImportExpression struct {
 	Expression

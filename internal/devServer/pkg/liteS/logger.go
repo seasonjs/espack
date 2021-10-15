@@ -222,7 +222,7 @@ const (
 //	}
 //
 //	return func(c *Context) {
-//		// Start timer
+//		// StartLoc timer
 //		start := time.Now()
 //		path := c.Request.URL.Path
 //		raw := c.Request.URL.RawQuery

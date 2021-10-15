@@ -5,8 +5,6 @@ type FunctionES2017 struct {
 	async bool
 }
 
-const AwaitExpressionType JsType = "AwaitExpression"
-
 type AwaitExpression struct {
 	Expression
 	argument Expression

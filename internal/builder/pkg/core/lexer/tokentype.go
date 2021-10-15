@@ -6,16 +6,18 @@ package lexer
 
 import "strconv"
 
-// TokenType determines the type of token, eg. a number or a semicolon.
+// TokenType 这里的TokenType即为jsT，lexer和Parser的类型断言应该保持一致
+//  determines the type of token, eg. a number or a semicolon.
 type TokenType uint16 // from LSB to MSB: 8 bits for tokens per category, 1 bit for numeric, 1 bit for punctuator, 1 bit for operator, 1 bit for identifier, 4 bits unused
 
 // TokenType values.
 const (
-	ErrorToken TokenType = iota // extra token when errors occur
+	ErrorToken TokenType = 0x000 + iota // extra token when errors occur
 	WhitespaceToken
 	LineTerminatorToken // \r \n \r\n
 	CommentToken
-	CommentLineTerminatorToken
+
+	CommentLineTerminatorToken //可能不需要注释换行符的解析
 	StringToken
 	TemplateToken
 	TemplateStartToken

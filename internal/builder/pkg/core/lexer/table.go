@@ -4,7 +4,9 @@
 
 package lexer
 
-import "strconv"
+import (
+	"strconv"
+)
 
 // OpPrec is the operator precedence
 type OpPrec int

@@ -183,17 +183,18 @@ func StartExpression(node Node) *Expression {
 	}
 }
 
-//===========================================================================================
+//============================Pattern======================================================
 
 // Pattern 参数
-type Pattern struct{ Node }
+type Pattern struct{ *Node }
 
-func StartPattern(node Node) Pattern {
+func StartPattern(node *Node) Pattern {
 	return Pattern{
 		node,
 	}
 }
 
+// TODO 是否需要类似duck type 进行绑定
 type StatementLike interface{}
 
 type Statement struct{ *Node }
@@ -210,12 +211,17 @@ func (s *Statement) ParseStatement() StatementLike {
 		return StartBreakStatement(s).ParseBreakStatement()
 	case lexer.ContinueToken:
 		return StartContinueStatement(s).ParseContinueStatement()
+	case lexer.DebuggerToken:
+		return StartDebuggerStatement(s).ParseDebuggerStatement()
+	case lexer.DoToken:
+		return StartDoWhileStatement(s).ParseDoWhileStatement()
+
 	default:
 		return nil
 	}
 }
 
-//==================================================================================
+//================================Identifier==============================================
 
 // ParseStatement 解析为具体的Statement 暂时不考虑修饰器
 //func (s *Statement) ParseStatement() {
@@ -261,7 +267,7 @@ type RegExpLiteral struct {
 	}
 }
 
-//==================================================================================
+//=================================Program==============================================
 
 // Program ast 的入口
 type Program struct {
@@ -349,9 +355,22 @@ func (s *Statement) ParseFunction() {
 
 }
 
-type DebuggerStatement struct {
-	Statement
+//===================================DebuggerStatement===============================================
+
+type DebuggerStatement struct{ *Statement }
+
+func StartDebuggerStatement(s *Statement) *DebuggerStatement {
+	s.jsT = DebuggerStatementType
+	return &DebuggerStatement{
+		s,
+	}
 }
+
+func (s *DebuggerStatement) ParseDebuggerStatement() *DebuggerStatement {
+	return s
+}
+
+//==================================================================================
 
 type WithStatement struct {
 	Statement
@@ -399,7 +418,7 @@ func (s *BreakStatement) ParseBreakStatement() BreakStatement {
 
 type ContinueStatement struct {
 	*Statement
-	label Identifier
+	label *Identifier
 }
 
 func StartContinueStatement(s *Statement) *ContinueStatement {
@@ -418,7 +437,7 @@ func (c *ContinueStatement) ParseContinueStatement() ContinueStatement {
 	if c.Cache.TT != lexer.LineTerminatorToken {
 		n := c.StartNode()
 		ider := StartIdentifier(n).ParseIdentifier()
-		c.label = *ider
+		c.label = ider
 	}
 	return *c
 }
@@ -466,11 +485,49 @@ type WhileStatement struct {
 	body Statement
 }
 
+//=========================================DoWhileStatement===================================================
+
 type DoWhileStatement struct {
-	Statement
-	body Statement
+	*Statement
+	body StatementLike
 	test Expression
 }
+
+// StartDoWhileStatement do while 循环当检查到do关键字的时候就意味着do while循环开始了
+func StartDoWhileStatement(s *Statement) *DoWhileStatement {
+	s.jsT = DoWhileStatementType
+	return &DoWhileStatement{
+		Statement: s,
+	}
+}
+
+//ParseDoWhileStatement 解析 DoWhile 关键字
+// 两种写法：
+//第一种
+//do a=1
+//while (i < 5);
+// 第二种
+//do {
+//   i += 1;
+//   result += i + ' ';
+//} while (i < 5);
+func (d *DoWhileStatement) ParseDoWhileStatement() *DoWhileStatement {
+	d.Next()
+	//TODO: ParseStatement需要解析子句范围
+	//调用ParseStatement解析do子句
+	d.body = d.ParseStatement()
+	d.Next()
+	//必须是While关键字
+	if d.Cache.TT == lexer.WhileToken {
+		//parseExpression
+	} else {
+		//报错
+	}
+
+	return d
+}
+
+//=======================================================================================================
 
 type ForStatement struct {
 	Statement

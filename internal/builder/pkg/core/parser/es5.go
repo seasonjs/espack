@@ -128,24 +128,25 @@ type Comment struct {
 
 //Node objects
 type Node struct {
-	lexer.Lexer
+	*lexer.Lexer
 	jsT              JsType
 	leadingComments  []Comment
 	trailingComments []Comment
 	innerComments    []Comment
 }
 
-//// NewNode 所有节点程序都可以被视为Node
-//func NewNode(lex lexer.Lexer) *Node {
-//	node := &Node{}
-//	node.Lexer = lex
-//	return node
-//}
-
-// StartNode 从头开始识别为Node
-func StartNode(lex lexer.Lexer) *Node {
+// NewNode 所有节点程序都可以被视为Node
+func NewNode(lex *lexer.Lexer) *Node {
 	node := &Node{}
 	node.Lexer = lex
+	return node
+}
+
+// StartNode 从头开始识别为Node
+func (n *Node) StartNode() *Node {
+	node := &Node{}
+	node.Lexer = n.Lexer
+	node.Lexer.Loc = n.Loc
 	return node
 }
 
@@ -195,13 +196,14 @@ func StartPattern(node Node) Pattern {
 
 type StatementLike interface{}
 
-type Statement struct{ Node }
+type Statement struct{ *Node }
 
 func StartStatement(node *Node) *Statement {
 	return &Statement{
-		*node,
+		node,
 	}
 }
+
 func (s *Statement) ParseStatement() StatementLike {
 	switch s.Cache.TT {
 	case lexer.BreakToken:
@@ -224,21 +226,23 @@ func (s *Statement) ParseStatement() StatementLike {
 type Identifier struct {
 	//Expression
 	//Pattern
-	Node
+	*Node
 	name string
 }
 
 func StartIdentifier(node *Node) *Identifier {
 	id := &Identifier{}
-	id.Node = *node
+	id.Node = node
 	id.jsT = IdentifierType
 	return id
 }
 
 func (i *Identifier) ParseIdentifier() *Identifier {
+	//真的扫描到了 IdentifierToken
 	if i.Cache.TT == lexer.IdentifierToken {
 		i.name = string(i.Cache.Text)
 	}
+	//则说明其实没有Identifier
 	return nil
 }
 
@@ -261,34 +265,38 @@ type RegExpLiteral struct {
 
 // Program ast 的入口
 type Program struct {
-	Node
+	*Node
 	body []interface{} //body [ Directive | Statement ]
 
 }
 
-//func NewProgram() *Program {
-//	return &Program{}
-//}
-
-func StartProgram(node Node) Program {
-	return Program{
-		Node: node,
-	}
-}
-func (p *Program) ParseProgram(r *in.Input) {
+func NewProgram(r *in.Input) *Program {
 	//TODO 需要处理顶级注释
-	topLevelNode := Node{}
+	topLevelNode := &Node{}
+
+	l := lexer.NewLexer(r)
+	topLevelNode.Lexer = l
 	//不在顶层存储降低空间占用
 	//topLevelNode.tokenValue = r.Bytes()
 	//Line >=1
-
 	topLevelNode.Loc.StartLoc.Line = 1
+	return &Program{
+		Node: topLevelNode,
+	}
+}
+
+//func StartProgram(node *Node) *Program {
+//	node.jsT = ProgramType
+//	return &Program{
+//		Node: node,
+//	}
+//}
+
+func (p *Program) ParseProgram() {
 	// 这里因为没有调用文本解析所以初始化代码位置暂时不检查
 	//topLevelNode.finishNodeAt(r.Len(), Position{1, 0})
-	program := StartProgram(topLevelNode)
+	//p = StartProgram(&topLevelNode)
 
-	l := lexer.NewLexer(r)
-	topLevelNode.Lexer = *l
 	//TODO 处理前置指令
 	// 比如 #! node
 	//tt, text, loc := l.Next()
@@ -296,17 +304,16 @@ func (p *Program) ParseProgram(r *in.Input) {
 	//
 	//}
 	for {
-		l.Next()
-		if l.Cache.TT == lexer.ErrorToken {
-			if l.Err() != io.EOF {
-				logger.Fail(fmt.Errorf("%s:%s:%v", l.Cache.Text, l.Err(), l.Cache.Loc), "Error on line")
+		p.Next()
+		if p.Cache.TT == lexer.ErrorToken {
+			if p.Err() != io.EOF {
+				logger.Fail(fmt.Errorf("%s:%s:%v", p.Cache.Text, p.Err(), p.Cache.Loc), "Error on line")
 			}
 			return
 		}
-		node := topLevelNode.StartNodeAt(l.Cache.Loc)
-
+		node := p.StartNode()
 		stmt := StartStatement(node).ParseStatement()
-		program.body = append(program.body, stmt)
+		p.body = append(p.body, stmt)
 	}
 
 }
@@ -364,14 +371,14 @@ type LabeledStatement struct {
 }
 
 type BreakStatement struct {
-	Statement
-	label Identifier
+	*Statement
+	label *Identifier
 }
 
 func StartBreakStatement(s *Statement) *BreakStatement {
 	s.jsT = BreakStatementType
 	return &BreakStatement{
-		Statement: *s,
+		Statement: s,
 	}
 }
 
@@ -381,28 +388,38 @@ func StartBreakStatement(s *Statement) *BreakStatement {
 // 与语句标签相关联的标识符。如果 break 语句不在一个循环或 switch 语句中，则该项是必须的。
 func (s *BreakStatement) ParseBreakStatement() BreakStatement {
 	s.Next()
-	// 这意味着Break有label
+	// 如果没有; 这意味着Break有label
 	if s.Cache.TT != lexer.LineTerminatorToken {
-		n := s.StartNodeAt(s.Cache.Loc)
+		n := s.StartNode()
 		ider := StartIdentifier(n).ParseIdentifier()
-		s.label = *ider
+		s.label = ider
 	}
 	return *s
 }
 
 type ContinueStatement struct {
-	Statement
+	*Statement
 	label Identifier
 }
 
 func StartContinueStatement(s *Statement) *ContinueStatement {
 	s.jsT = ContinueStatementType
 	return &ContinueStatement{
-		Statement: *s,
+		Statement: s,
 	}
 }
 
+// ParseContinueStatement 解析 continue 关键字;
+// continue [ label ];
+// label
+// 标识标号关联的语句
 func (c *ContinueStatement) ParseContinueStatement() ContinueStatement {
+	// 这意味着Break有label
+	if c.Cache.TT != lexer.LineTerminatorToken {
+		n := c.StartNode()
+		ider := StartIdentifier(n).ParseIdentifier()
+		c.label = *ider
+	}
 	return *c
 }
 

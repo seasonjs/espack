@@ -178,11 +178,11 @@ func (l *Lexer) Next() {
 		}
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 		l.countStart()
-
 		if tt := l.consumeNumericToken(); tt != ErrorToken || l.r.Pos() != 0 {
 			l.countEnd()
 			l.prevNumericLiteral = true
 			l.setCache(tt, l.r.Shift(), l.Loc)
+			return
 		} else if c == '.' {
 			l.r.Move(1)
 			if l.r.Peek(0) == '.' && l.r.Peek(1) == '.' {

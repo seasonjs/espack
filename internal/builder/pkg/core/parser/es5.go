@@ -124,11 +124,20 @@ const VarKind KindType = "var"
 type Comment struct {
 }
 
+//=================================Node state ======================================
+
+//这里的状态大体上是用于生成sourcemap的
+
+type State struct {
+	*lexer.SourceLocation
+}
+
 //===================================================================================
 
 //Node objects
 type Node struct {
 	*lexer.Lexer
+	State            *State
 	jsT              JsType
 	leadingComments  []Comment
 	trailingComments []Comment
@@ -147,6 +156,9 @@ func (n *Node) StartNode() *Node {
 	node := &Node{}
 	node.Lexer = n.Lexer
 	node.Lexer.Loc = n.Loc
+	node.State = &State{
+		&n.Loc,
+	}
 	return node
 }
 
@@ -155,6 +167,9 @@ func (n *Node) StartNodeAt(loc lexer.SourceLocation) *Node {
 	node := &Node{}
 	node.Lexer = n.Lexer
 	node.Lexer.Loc = loc
+	node.State = &State{
+		&loc,
+	}
 	//TODO 对注释进行拷贝
 	return node
 }
@@ -165,12 +180,21 @@ func (n *Node) StartNodeAtNode(node Node) *Node {
 }
 
 func (n *Node) finishNodeAt(loc lexer.SourceLocation) {
-	n.Loc = loc
+	n.State = &State{
+		&loc,
+	}
 }
 
-//func (n *Node) finishNode() {
-//	n.
-//}
+func (n *Node) finishNode() {
+	n.State.End = n.Cache.Loc.Start
+	n.State.EndLoc = n.Cache.Loc.StartLoc
+}
+
+func (n *Node) Next() {
+	if n.Cache.TT == lexer.WhitespaceToken {
+		n.Lexer.Next()
+	}
+}
 
 //==========================================================================================
 
@@ -194,7 +218,7 @@ func StartPattern(node *Node) Pattern {
 	}
 }
 
-// TODO 是否需要类似duck type 进行绑定
+// StatementLike TODO 是否需要类似duck type 进行绑定
 type StatementLike interface{}
 
 type Statement struct{ *Node }
@@ -215,7 +239,38 @@ func (s *Statement) ParseStatement() StatementLike {
 		return StartDebuggerStatement(s).ParseDebuggerStatement()
 	case lexer.DoToken:
 		return StartDoWhileStatement(s).ParseDoWhileStatement()
-
+	case lexer.ForToken:
+		return StartForBasicStatement(s).ParseAllForStatement()
+	//case lexer.FunctionToken:
+	//	//...
+	//case lexer.ClassToken:
+	//	//...
+	//case lexer.IfToken:
+	//	//...
+	//case lexer.ReturnToken:
+	//	//...
+	//case lexer.SwitchToken:
+	//	//...
+	//case lexer.ThrowToken:
+	//	//...
+	//case lexer.TryToken:
+	//	//...
+	//case lexer.ConstToken:
+	//	// return lowLevel error
+	//case lexer.VarToken:
+	//	//...
+	//case lexer.WhileToken:
+	//	//...
+	//case lexer.WithToken:
+	//	// return lowLevel error
+	//case lexer.OpenBraceToken:
+	//	return StartBlockStatement(s).ParseBlockStatement()
+	//case lexer.SemicolonToken:
+	//	//...
+	//case lexer.ImportToken:
+	//	// return lowLevel error
+	//case lexer.ExportToken:
+	//	// return lowLevel error
 	default:
 		return nil
 	}
@@ -270,18 +325,18 @@ type RegExpLiteral struct {
 //=================================Program==============================================
 
 // Program ast 的入口
+
+type ProgramBodyLike interface{}
+
 type Program struct {
 	*Node
-	body []interface{} //body [ Directive | Statement ]
+	body []ProgramBodyLike //body [ Directive | Statement ]
 
 }
 
 func NewProgram(r *in.Input) *Program {
 	//TODO 需要处理顶级注释
-	topLevelNode := &Node{}
-
-	l := lexer.NewLexer(r)
-	topLevelNode.Lexer = l
+	topLevelNode := NewNode(lexer.NewLexer(r))
 	//不在顶层存储降低空间占用
 	//topLevelNode.tokenValue = r.Bytes()
 	//Line >=1
@@ -298,7 +353,7 @@ func NewProgram(r *in.Input) *Program {
 //	}
 //}
 
-func (p *Program) ParseProgram() {
+func (p *Program) ParseProgram() *Program {
 	// 这里因为没有调用文本解析所以初始化代码位置暂时不检查
 	//topLevelNode.finishNodeAt(r.Len(), Position{1, 0})
 	//p = StartProgram(&topLevelNode)
@@ -315,13 +370,17 @@ func (p *Program) ParseProgram() {
 			if p.Err() != io.EOF {
 				logger.Fail(fmt.Errorf("%s:%s:%v", p.Cache.Text, p.Err(), p.Cache.Loc), "Error on line")
 			}
-			return
+			//这块意味着执行到文件的EOF标志了
+			p.finishNode()
+			p.jsT = ProgramType
+			return p
 		}
 		node := p.StartNode()
 		stmt := StartStatement(node).ParseStatement()
+		//TODO 检查这个逻辑是否存在问题？
+		node.finishNode()
 		p.body = append(p.body, stmt)
 	}
-
 }
 
 //==================================================================================
@@ -333,15 +392,50 @@ type Directive struct {
 	directive  string
 }
 
+type FunctionBodyLike interface{}
+
 type FunctionBody struct {
 	BlockStatement
-	body interface{} //body  [ Directive | Statement ]
+	body []FunctionBodyLike //body  [ Directive | Statement ]
 
 }
 
+//==================================================================================
+
 type BlockStatement struct {
-	Statement
-	body []Statement
+	*Statement
+	body []StatementLike
+}
+
+func StartBlockStatement(s *Statement) *BlockStatement {
+	return &BlockStatement{
+		Statement: s,
+	}
+}
+
+func (s *BlockStatement) ParseBlockStatement() *BlockStatement {
+	s.ParseBlockStatementBody()
+	return s
+}
+
+func (s *BlockStatement) ParseBlockStatementBody() {
+	for {
+		s.Next()
+		//TODO: 这个的逻辑是否正确？
+		if s.Cache.TT == lexer.CloseBraceToken {
+			if s.Err() != io.EOF {
+				logger.Fail(fmt.Errorf("%s:%s:%v", s.Cache.Text, s.Err(), s.Cache.Loc), "Error on line")
+			}
+			//这块意味着执行到文件的EOF标志了
+			s.finishNode()
+			return
+		}
+		node := s.StartNode()
+		stmt := StartStatement(node).ParseStatement()
+		//TODO 检查这个逻辑是否存在问题？
+		node.finishNode()
+		s.body = append(s.body, stmt)
+	}
 }
 
 type Function struct {
@@ -360,13 +454,14 @@ func (s *Statement) ParseFunction() {
 type DebuggerStatement struct{ *Statement }
 
 func StartDebuggerStatement(s *Statement) *DebuggerStatement {
-	s.jsT = DebuggerStatementType
+
 	return &DebuggerStatement{
 		s,
 	}
 }
 
 func (s *DebuggerStatement) ParseDebuggerStatement() *DebuggerStatement {
+	s.jsT = DebuggerStatementType
 	return s
 }
 
@@ -395,7 +490,6 @@ type BreakStatement struct {
 }
 
 func StartBreakStatement(s *Statement) *BreakStatement {
-	s.jsT = BreakStatementType
 	return &BreakStatement{
 		Statement: s,
 	}
@@ -406,6 +500,7 @@ func StartBreakStatement(s *Statement) *BreakStatement {
 // label 可选
 // 与语句标签相关联的标识符。如果 break 语句不在一个循环或 switch 语句中，则该项是必须的。
 func (s *BreakStatement) ParseBreakStatement() BreakStatement {
+	s.jsT = BreakStatementType
 	s.Next()
 	// 如果没有; 这意味着Break有label
 	if s.Cache.TT != lexer.LineTerminatorToken {
@@ -422,7 +517,6 @@ type ContinueStatement struct {
 }
 
 func StartContinueStatement(s *Statement) *ContinueStatement {
-	s.jsT = ContinueStatementType
 	return &ContinueStatement{
 		Statement: s,
 	}
@@ -433,6 +527,7 @@ func StartContinueStatement(s *Statement) *ContinueStatement {
 // label
 // 标识标号关联的语句
 func (c *ContinueStatement) ParseContinueStatement() ContinueStatement {
+	c.jsT = ContinueStatementType
 	// 这意味着Break有label
 	if c.Cache.TT != lexer.LineTerminatorToken {
 		n := c.StartNode()
@@ -495,7 +590,7 @@ type DoWhileStatement struct {
 
 // StartDoWhileStatement do while 循环当检查到do关键字的时候就意味着do while循环开始了
 func StartDoWhileStatement(s *Statement) *DoWhileStatement {
-	s.jsT = DoWhileStatementType
+
 	return &DoWhileStatement{
 		Statement: s,
 	}
@@ -512,6 +607,7 @@ func StartDoWhileStatement(s *Statement) *DoWhileStatement {
 //   result += i + ' ';
 //} while (i < 5);
 func (d *DoWhileStatement) ParseDoWhileStatement() *DoWhileStatement {
+	d.jsT = DoWhileStatementType
 	d.Next()
 	//TODO: ParseStatement需要解析子句范围
 	//调用ParseStatement解析do子句
@@ -527,24 +623,87 @@ func (d *DoWhileStatement) ParseDoWhileStatement() *DoWhileStatement {
 	return d
 }
 
-//=======================================================================================================
+//=====================================ForStatement====================================================
+
+//for ([initialization]; [condition]; [final-expression])
+//   statement
+//initialization
+//一个表达式 (包含赋值语句) 或者变量声明。典型地被用于初始化一个计数器。
+//该表达式可以使用 var 或 let 关键字声明新的变量，使用 var 声明的变量不是该循环的局部变量，
+//而是与 for 循环处在同样的作用域中。用 let 声明的变量是语句的局部变量。该表达式的结果无意义。
+//condition
+//一个条件表达式被用于确定每一次循环是否能被执行。如果该表达式的结果为 true，statement 将被执行。
+//这个表达式是可选的。如果被忽略，那么就被认为永远为真。如果计算结果为假，那么执行流程将被跳到 for 语句结构后面的第一条语句。
+//final-expression
+//每次循环的最后都要执行的表达式。执行时机是在下一次 condition 的计算之前。通常被用于更新或者递增计数器变量。
+//statement
+//只要condition的结果为true就会被执行的语句。要在循环体内执行多条语句，使用一个块语句（{ ... }）来包含要执行的语句。没有任何语句要执行，使用一个空语句（;）。
+
+type ForBasicStatement struct {
+	*Statement
+	body *Statement
+}
+
+type ForInStatement struct {
+	*ForBasicStatement
+	//left VariableDeclaration |  Pattern;
+	left  interface{}
+	right Expression
+}
 
 type ForStatement struct {
-	Statement
+	*ForBasicStatement
 	//init: VariableDeclaration | Expression;
 	init   interface{}
 	test   Expression
 	update Expression
-	body   Statement
 }
 
-type ForInStatement struct {
-	Statement
-	//left VariableDeclaration |  Pattern;
-	left  interface{}
-	right Expression
-	body  Statement
+func StartForBasicStatement(s *Statement) *ForBasicStatement {
+	//在ParseForStatement和Pr
+
+	return &ForBasicStatement{
+		Statement: s,
+	}
 }
+
+func (f *ForBasicStatement) ParseAllForStatement() StatementLike {
+	//var forCtxCache [][]byte
+	var parenTrack = 0
+	f.Next()
+	//for 结构体必须是通过（）包裹
+
+	if f.Cache.TT == lexer.OpenParenToken {
+		parenTrack++
+		f.Next()
+		//if {
+		//
+		//}
+	}
+	//f.jsT = ForStatementType
+	//f.jsT = ForInStatementType
+	return &ForStatement{
+		ForBasicStatement: f,
+	}
+}
+
+func (f *ForBasicStatement) ParseForStatement() *ForStatement {
+	return &ForStatement{
+		ForBasicStatement: f,
+	}
+}
+
+func (f *ForBasicStatement) ParseForInStatement() *ForInStatement {
+	return &ForInStatement{
+		ForBasicStatement: f,
+	}
+}
+
+func f() {
+
+}
+
+//=======================================================================================================
 
 type Declaration struct{ Statement }
 

@@ -39,27 +39,40 @@ func IsIdentifierEnd(b []byte) bool {
 ////////////////////////////////////////////////////////////////
 
 // Position 位置
+
 type Position struct {
-	line   int // >= 1
-	column int // >= 0
+	Line   int // >= 1
+	Column int // >= 0
 }
 
-type Location struct {
-	startLoc Position
-	endLoc   Position
+type SourceLocation struct {
+	//TODO 是否需要替换成[][]byte
+	source   string
+	StartLoc Position
+	EndLoc   Position
+	Start    int
+	End      int
+}
+type Cache struct {
+	TT   TokenType
+	Text []byte
+	Loc  SourceLocation
 }
 
 // Lexer is the state for the lexer.
 type Lexer struct {
+	Cache              Cache
 	r                  *in.Input
 	err                error
 	prevLineTerminator bool
 	prevNumericLiteral bool
 	level              int
 	templateLevels     []int
-	loc                Location
+	Loc                SourceLocation
 	pos                int
 	curLine            int
+	Start              int
+	End                int
 }
 
 // NewLexer returns a new Lexer for a given io.Reader.
@@ -71,7 +84,14 @@ func NewLexer(r *in.Input) *Lexer {
 		templateLevels:     []int{},
 		pos:                0,
 		curLine:            1,
+		Start:              0,
+		End:                0,
+		Loc:                SourceLocation{},
 	}
+}
+
+func (l *Lexer) Len() int {
+	return l.r.Len()
 }
 
 // Err returns the error encountered during lexing, this is often io.EOF but also other errors can be returned.
@@ -102,7 +122,7 @@ func (l *Lexer) RegExp() (TokenType, []byte) {
 }
 
 // Next 返回一个Token状态信息
-func (l *Lexer) Next() (TokenType, []byte, Location) {
+func (l *Lexer) Next() {
 	prevLineTerminator := l.prevLineTerminator
 	l.prevLineTerminator = false
 
@@ -128,262 +148,211 @@ func (l *Lexer) Next() (TokenType, []byte, Location) {
 	c := l.r.Peek(0)
 	switch c {
 	case ' ', '\t', '\v', '\f':
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
 		for l.consumeWhitespace() {
 		}
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
+		l.countEnd()
 		l.prevLineTerminator = prevLineTerminator
-		return WhitespaceToken, l.r.Shift(), l.loc
+		l.setCache(WhitespaceToken, l.r.Shift(), l.Loc)
+		return
 	case '\n', '\r':
 		l.curLine++
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
+		//换行意味着重新开始计算开始位置
+		l.pos = 0
 		for l.consumeLineTerminator() {
 			l.curLine++
 		}
-		end := l.curPosition()
-		l.pos = 0
-		l.loc = Location{
-			start, end,
-		}
+		l.countEnd()
 		l.prevLineTerminator = true
-		return LineTerminatorToken, l.r.Shift(), l.loc
+		l.setCache(LineTerminatorToken, l.r.Shift(), l.Loc)
+		return
 	case '>', '=', '!', '+', '*', '%', '&', '|', '^', '~', '?':
-		start := l.curPosition()
-
+		l.countStart()
 		if tt := l.consumeOperatorToken(); tt != ErrorToken {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return tt, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(tt, l.r.Shift(), l.Loc)
+			return
 		}
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
-		start := l.curPosition()
-
+		l.countStart()
 		if tt := l.consumeNumericToken(); tt != ErrorToken || l.r.Pos() != 0 {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
+			l.countEnd()
 			l.prevNumericLiteral = true
-			return tt, l.r.Shift(), l.loc
+			l.setCache(tt, l.r.Shift(), l.Loc)
+			return
 		} else if c == '.' {
 			l.r.Move(1)
 			if l.r.Peek(0) == '.' && l.r.Peek(1) == '.' {
 				l.r.Move(2)
-				end := l.curPosition()
-				l.loc = Location{
-					start, end,
-				}
-				return EllipsisToken, l.r.Shift(), l.loc
+				l.countEnd()
+				l.setCache(EllipsisToken, l.r.Shift(), l.Loc)
+				return
 			}
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return DotToken, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(DotToken, l.r.Shift(), l.Loc)
+			return
 		}
 	case ',':
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return CommaToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(CommaToken, l.r.Shift(), l.Loc)
+		return
 	case ';':
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return SemicolonToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(SemicolonToken, l.r.Shift(), l.Loc)
+		return
 	case '(':
-		start := l.curPosition()
+		l.countStart()
 		l.level++
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return OpenParenToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(OpenParenToken, l.r.Shift(), l.Loc)
+		return
 	case ')':
+		l.countStart()
 		l.level--
 		l.r.Move(1)
-		return CloseParenToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(CloseParenToken, l.r.Shift(), l.Loc)
+		return
 	case '/':
-		start := l.curPosition()
+		l.countStart()
 		if tt := l.consumeCommentToken(); tt != ErrorToken {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return tt, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(tt, l.r.Shift(), l.Loc)
+			return
 		} else if tt := l.consumeOperatorToken(); tt != ErrorToken {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return tt, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(tt, l.r.Shift(), l.Loc)
+			return
 		}
 	case '{':
-		start := l.curPosition()
+		l.countStart()
 		l.level++
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return OpenBraceToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(OpenBraceToken, l.r.Shift(), l.Loc)
+		return
 	case '}':
-		start := l.curPosition()
+		l.countStart()
 		l.level--
 		if len(l.templateLevels) != 0 && l.level == l.templateLevels[len(l.templateLevels)-1] {
 			tt, end := l.consumeTemplateToken()
-			l.loc = Location{
-				start, end,
-			}
-			return tt, l.r.Shift(), l.loc
+			l.countWithEnd(end)
+			l.setCache(tt, l.r.Shift(), l.Loc)
+			return
 		}
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return CloseBraceToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(CloseBraceToken, l.r.Shift(), l.Loc)
+		return
 	case ':':
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return ColonToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(ColonToken, l.r.Shift(), l.Loc)
+		return
 	case '\'', '"':
-		start := l.curPosition()
+		l.countStart()
 		if l.consumeStringToken() {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return StringToken, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(StringToken, l.r.Shift(), l.Loc)
+			return
 		}
 	case ']':
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return CloseBracketToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(CloseBracketToken, l.r.Shift(), l.Loc)
+		return
 	case '[':
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return OpenBracketToken, l.r.Shift(), l.loc
+		l.countEnd()
+		l.setCache(OpenBracketToken, l.r.Shift(), l.Loc)
+		return
 	case '<', '-':
-		start := l.curPosition()
+		l.countStart()
 		if l.consumeHTMLLikeCommentToken(prevLineTerminator) {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return CommentToken, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(CommentToken, l.r.Shift(), l.Loc)
+			return
 		} else if tt := l.consumeOperatorToken(); tt != ErrorToken {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return tt, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(tt, l.r.Shift(), l.Loc)
+			return
 		}
 	case '`':
-		start := l.curPosition()
+		l.countStart()
 		l.templateLevels = append(l.templateLevels, l.level)
 		tt, end := l.consumeTemplateToken()
-		l.loc = Location{
-			start, end,
-		}
-		return tt, l.r.Shift(), l.loc
+		l.countWithEnd(end)
+		l.setCache(tt, l.r.Shift(), l.Loc)
+		return
 	case '#':
-		start := l.curPosition()
+		l.countStart()
 		l.r.Move(1)
 		if l.consumeIdentifierToken() {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return PrivateIdentifierToken, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(PrivateIdentifierToken, l.r.Shift(), l.Loc)
+			return
 		}
-		end := l.curPosition()
-		l.loc = Location{
-			start, end,
-		}
-		return ErrorToken, nil, l.loc
+		l.countEnd()
+		l.setCache(ErrorToken, nil, l.Loc)
+		return
 	default:
-		start := l.curPosition()
+		l.countStart()
 		if l.consumeIdentifierToken() {
 			if prevNumericLiteral {
-				end := l.curPosition()
-				l.loc = Location{
-					start, end,
-				}
+				l.countEnd()
 				l.err = in.NewErrorLexer(l.r, "unexpected identifier after number")
-				return ErrorToken, nil, l.loc
+				l.setCache(ErrorToken, nil, l.Loc)
+				return
 			} else if keyword, ok := Keywords[string(l.r.Lexeme())]; ok {
-				end := l.curPosition()
-				l.loc = Location{
-					start, end,
-				}
-				return keyword, l.r.Shift(), l.loc
+				l.countEnd()
+				l.setCache(keyword, l.r.Shift(), l.Loc)
+				return
 			}
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return IdentifierToken, l.r.Shift(), l.loc
+			l.countEnd()
+			l.setCache(IdentifierToken, l.r.Shift(), l.Loc)
+			return
 		}
 		if 0xC0 <= c {
 			if l.consumeWhitespace() {
 				for l.consumeWhitespace() {
 				}
-				end := l.curPosition()
-				l.loc = Location{
-					start, end,
-				}
+				l.countEnd()
 				l.prevLineTerminator = prevLineTerminator
-				return WhitespaceToken, l.r.Shift(), l.loc
+				l.setCache(WhitespaceToken, l.r.Shift(), l.Loc)
+				return
 			} else if l.consumeLineTerminator() {
+				l.pos = 0
 				for l.consumeLineTerminator() {
+					l.curLine++
 				}
-				end := l.curPosition()
-				l.loc = Location{
-					start, end,
-				}
+				l.countEnd()
 				l.prevLineTerminator = true
-				return LineTerminatorToken, l.r.Shift(), l.loc
+				l.setCache(LineTerminatorToken, l.r.Shift(), l.Loc)
+				return
 			}
 		} else if c == 0 && l.r.Err() != nil {
-			end := l.curPosition()
-			l.loc = Location{
-				start, end,
-			}
-			return ErrorToken, nil, l.loc
+			l.countEnd()
+			l.setCache(ErrorToken, nil, l.Loc)
+			return
 		}
 	}
 
 	r, _ := l.r.PeekRune(0)
 	l.err = in.NewErrorLexer(l.r, "unexpected %s", in.Printable(r))
-	return ErrorToken, l.r.Shift(), l.loc
+	l.setCache(ErrorToken, l.r.Shift(), l.Loc)
+	return
 }
 
 ////////////////////////////////////////////////////////////////
@@ -393,13 +362,34 @@ The following functions follow the specifications at http://www.ecma-internation
 */
 
 func (l *Lexer) curPosition() Position {
-	//pos 存在问题 ：）它取的不是正确的line
 	l.pos = l.pos + l.r.Pos()
 	return Position{
-		l.curLine, l.pos,
+		Line:   l.curLine,
+		Column: l.pos,
 	}
 }
 
+func (l *Lexer) countStart() {
+	l.Loc.StartLoc = l.curPosition()
+	l.Loc.Start = l.r.Offset()
+}
+
+func (l *Lexer) countEnd() {
+	l.Loc.StartLoc = l.curPosition()
+	l.Loc.End = l.r.Offset()
+
+}
+
+func (l *Lexer) countWithEnd(el Position) {
+	l.Loc.EndLoc = el
+	l.Loc.End = l.r.Offset()
+}
+
+func (l *Lexer) setCache(tt TokenType, text []byte, location SourceLocation) {
+	l.Cache.Loc = location
+	l.Cache.TT = tt
+	l.Cache.Text = text
+}
 func (l *Lexer) consumeWhitespace() bool {
 	c := l.r.Peek(0)
 	if c == ' ' || c == '\t' || c == '\v' || c == '\f' {

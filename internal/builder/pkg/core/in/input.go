@@ -175,3 +175,7 @@ func (z *Input) Reset() {
 	z.start = 0
 	z.pos = 0
 }
+
+func (z *Input) Location() (int, int) {
+	return z.start, z.pos
+}

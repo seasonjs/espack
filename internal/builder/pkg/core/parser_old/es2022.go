@@ -6,8 +6,6 @@ type ClassBodyES2022 struct {
 	body interface{}
 }
 
-const PropertyDefinitionType JsType = "PropertyDefinition"
-
 type PropertyDefinition struct {
 	Node
 	//key: Expression | PrivateIdentifier;
@@ -23,8 +21,6 @@ type MethodDefinitionES2022 struct {
 	key interface{}
 }
 
-const PrivateIdentifierType JsType = "PrivateIdentifier"
-
 type PrivateIdentifier struct {
 	Node
 	name string
@@ -35,8 +31,6 @@ type MemberExpressionES2022 struct {
 	//property: Expression | PrivateIdentifier;
 	property interface{}
 }
-
-const StaticBlockType JsType = "StaticBlock"
 
 type StaticBlock struct {
 	BlockStatement

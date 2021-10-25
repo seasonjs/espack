@@ -28,8 +28,6 @@ const (
 	ConstType KindType = "const"
 )
 
-const SuperType JsType = "super"
-
 type Super struct {
 	Node
 }
@@ -47,8 +45,6 @@ type MemberExpressionES2015 struct {
 	//object: Expression | Super;
 	object interface{}
 }
-
-const SpreadElementType JsType = "SpreadElement"
 
 type SpreadElement struct {
 	Node
@@ -80,8 +76,6 @@ type PropertyES2015 struct {
 	computed  bool
 }
 
-const ArrowFunctionExpressionType JsType = "ArrowFunctionExpression"
-
 type ArrowFunctionExpression struct {
 	FunctionES2015
 	Expression
@@ -90,15 +84,11 @@ type ArrowFunctionExpression struct {
 	expression bool
 }
 
-const YieldExpressionType JsType = "YieldExpression"
-
 type YieldExpression struct {
 	Expression
 	argument Expression
 	delegate bool
 }
-
-const ExpressionType JsType = "Expression"
 
 type TemplateLiteral struct {
 	Expression
@@ -106,15 +96,11 @@ type TemplateLiteral struct {
 	expressions []Expression
 }
 
-const TaggedTemplateExpressionType JsType = "TaggedTemplateExpression"
-
 type TaggedTemplateExpression struct {
 	Expression
 	tag   Expression
 	quasi TemplateLiteral
 }
-
-const TemplateElementType JsType = "TemplateElement"
 
 type TemplateElement struct {
 	Node
@@ -134,28 +120,20 @@ type AssignmentProperty struct {
 	method bool
 }
 
-const ObjectPatternType = "ObjectPattern"
-
 type ObjectPattern struct {
 	Pattern
 	properties []AssignmentProperty
 }
-
-const ArrayPatternType JsType = "ArrayPattern"
 
 type ArrayPattern struct {
 	Pattern
 	elements []Pattern
 }
 
-const RestElementType JsType = "RestElement"
-
 type RestElement struct {
 	Pattern
 	argument Pattern
 }
-
-const AssignmentPatternType JsType = "AssignmentPattern"
 
 type AssignmentPattern struct {
 	Pattern
@@ -170,14 +148,10 @@ type Class struct {
 	body       ClassBody
 }
 
-const ClassBodyType JsType = "ClassBody"
-
 type ClassBody struct {
 	Node
 	body []MethodDefinition
 }
-
-const MethodDefinitionType JsType = "MethodDefinition"
 
 const (
 	ConstructorKind KindType = "constructor"
@@ -195,22 +169,16 @@ type MethodDefinition struct {
 	static   bool
 }
 
-const ClassDeclarationType JsType = "ClassDeclaration"
-
 type ClassDeclaration struct {
 	Class
 	Declaration
 	id Identifier
 }
 
-const ClassExpressionType JsType = "ClassExpression"
-
 type ClassExpression struct {
 	Class
 	Expression
 }
-
-const MetaPropertyType JsType = "MetaProperty"
 
 type MetaProperty struct {
 	Expression
@@ -227,8 +195,6 @@ type ModuleSpecifier struct {
 	local Identifier
 }
 
-const ImportDeclarationType JsType = "ImportDeclaration"
-
 type ImportDeclaration struct {
 	ModuleDeclaration
 	//specifiers: [ ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier ];
@@ -236,26 +202,18 @@ type ImportDeclaration struct {
 	source     Literal
 }
 
-const ImportSpecifierType = "ImportSpecifier"
-
 type ImportSpecifier struct {
 	ModuleSpecifier
 	imported Identifier
 }
 
-const ImportDefaultSpecifierType JsType = "ImportDefaultSpecifier"
-
 type ImportDefaultSpecifier struct {
 	ModuleSpecifier
 }
 
-const ImportNamespaceSpecifierType JsType = "ImportNamespaceSpecifier"
-
 type ImportNamespaceSpecifier struct {
 	ModuleSpecifier
 }
-
-const ExportNamedDeclarationType JsType = "ExportNamedDeclaration"
 
 type ExportNamedDeclaration struct {
 	ModuleDeclaration
@@ -263,8 +221,6 @@ type ExportNamedDeclaration struct {
 	specifiers  []ExportSpecifier
 	source      Literal
 }
-
-const ExportSpecifierType JsType = "ExportSpecifier"
 
 type ExportSpecifier struct {
 	ModuleSpecifier
@@ -283,15 +239,11 @@ type AnonymousDefaultExportedClassDeclaration struct {
 	//id: null;
 }
 
-const ExportDefaultDeclarationType JsType = "ExportDefaultDeclaration"
-
 type ExportDefaultDeclaration struct {
 	ModuleDeclaration
 	//declaration AnonymousDefaultExportedFunctionDeclaration | FunctionDeclaration | AnonymousDefaultExportedClassDeclaration | ClassDeclaration | Expression;
 	declaration interface{}
 }
-
-const ExportAllDeclarationType JsType = "ExportAllDeclaration"
 
 type ExportAllDeclaration struct {
 	ModuleDeclaration

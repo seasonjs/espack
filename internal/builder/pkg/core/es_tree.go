@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"github.com/seasonjs/espack/internal/builder/pkg/core/in"
 	"github.com/seasonjs/espack/internal/builder/pkg/core/lexer"
-	"github.com/seasonjs/espack/internal/builder/pkg/core/parser"
+	"github.com/seasonjs/espack/internal/builder/pkg/core/parser_old"
 	"github.com/seasonjs/espack/internal/logger"
 )
 
@@ -77,7 +77,7 @@ type ES5 struct {
 	lexers   map[string]*lexer.Lexer
 	gVersion ESGVersion
 	extends  []ESExtends
-	ast      map[string]parser.Program
+	ast      map[string]parser_old.Program
 }
 
 func NewESTree(v ESVersion, gv ESGVersion, extends ...ESExtends) ESTree {
@@ -135,11 +135,11 @@ func (es ES5) GetTargetVersion() ESGVersion {
 	return es.gVersion
 }
 
-func (es ES5) GetAST() map[string]parser.Program {
+func (es ES5) GetAST() map[string]parser_old.Program {
 	return es.ast
 }
 
-func (es *ES5) SetAST(ast *map[string]parser.Program) {
+func (es *ES5) SetAST(ast *map[string]parser_old.Program) {
 	es.ast = *ast
 }
 
@@ -192,7 +192,7 @@ func (es *ES5) Generator() {
 
 type ES2015 struct {
 	ES5
-	ast map[string]parser.ProgramES2015
+	ast map[string]parser_old.ProgramES2015
 }
 
 func (es *ES2015) Parser() {
@@ -201,11 +201,11 @@ func (es *ES2015) Parser() {
 
 //======================= getter setter ========================================
 
-func (es ES2015) GetAST() map[string]parser.ProgramES2015 {
+func (es ES2015) GetAST() map[string]parser_old.ProgramES2015 {
 	return es.ast
 }
 
-func (es *ES2015) SetAST(ast *map[string]parser.ProgramES2015) {
+func (es *ES2015) SetAST(ast *map[string]parser_old.ProgramES2015) {
 	es.ast = *ast
 }
 

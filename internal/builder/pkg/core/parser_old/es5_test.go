@@ -1,4 +1,4 @@
-package parser
+package parser_old
 
 import (
 	"github.com/seasonjs/espack/internal/builder/pkg/core/in"

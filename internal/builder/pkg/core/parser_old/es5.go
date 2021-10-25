@@ -1,4 +1,4 @@
-package parser
+package parser_old
 
 //类型声明基于 https://github.com/estree/estree/blob/master/es5.md
 //第二参考文档 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators

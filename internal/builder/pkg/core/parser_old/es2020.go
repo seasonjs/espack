@@ -1,4 +1,4 @@
-package parser
+package parser_old
 
 type LiteralES2020 struct {
 	Literal

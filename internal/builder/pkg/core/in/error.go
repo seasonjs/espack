@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-// Error is a parsing error returned by parser. It contains a message and an offset at which the error occurred.
+// Error is a parsing error returned by parser_old. It contains a message and an offset at which the error occurred.
 type Error struct {
 	Message string
 	Line    int

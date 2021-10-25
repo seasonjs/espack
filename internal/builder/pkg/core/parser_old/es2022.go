@@ -1,4 +1,4 @@
-package parser
+package parser_old
 
 type ClassBodyES2022 struct {
 	ClassBody

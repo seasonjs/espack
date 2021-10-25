@@ -1,4 +1,4 @@
-package parser
+package parser_old
 
 type FunctionES2017 struct {
 	FunctionES2015

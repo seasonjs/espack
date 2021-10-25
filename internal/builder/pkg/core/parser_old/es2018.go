@@ -1,4 +1,4 @@
-package parser
+package parser_old
 
 type ForOfStatementES2017 struct {
 	ForOfStatement

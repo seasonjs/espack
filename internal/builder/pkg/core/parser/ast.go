@@ -50,45 +50,45 @@ const (
 //最顶层的ast结构为了实现 go duck type
 
 type NodeLike interface {
-	Jsonify() NodeLike
-	Js() NodeLike
-	String() NodeLike
+	Jsonify() NodeLike //to json
+	Js() NodeLike      //to js
+	Parse() NodeLike   //to ast
 	isNodeLike() bool
 }
 
 type StatementLike interface {
 	NodeLike
-	isStatementLike() bool
+	isStatementLike() bool //just bind type , never call
 }
 type ExpressionLike interface {
 	NodeLike
-	isExpressionLike() bool
+	isExpressionLike() bool //just bind type , never call
 }
 
 type PatternLike interface {
 	NodeLike
-	isPatternLike() bool
+	isPatternLike() bool //just bind type , never call
 }
 
 type FunctionLike interface {
 	NodeLike
-	isFunctionLike() bool
+	isFunctionLike() bool //just bind type , never call
 }
 
 type DeclarationLike interface {
 	StatementLike
-	isDeclarationLike() bool
+	isDeclarationLike() bool //just bind type , never call
 }
 
 type LiteralLike interface {
 	ExpressionLike
-	isLiteralLike() bool
+	isLiteralLike() bool //just bind type , never call
 }
 
 // BlockBodyLike 这个类型是一个特殊的类型，它是因为go 而特殊定制的
 type BlockBodyLike interface {
 	StatementLike
-	isBlockBodyLike() bool
+	isBlockBodyLike() bool //just bind type , never call
 }
 
 //=============================================================================
@@ -111,7 +111,7 @@ type Identifier struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Name string `json:"name"`
+	Name []byte `json:"name"`
 }
 
 func (i Identifier) Jsonify() NodeLike {
@@ -122,7 +122,7 @@ func (i Identifier) Js() NodeLike {
 	panic("implement me")
 }
 
-func (i Identifier) String() NodeLike {
+func (i Identifier) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -145,12 +145,12 @@ type RegExpLiteral struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	//Literal
-	//value: string | boolean | null | number | RegExp;
-	value []byte
+	//Value: Parse | boolean | null | number | RegExp;
+	Value []byte `json:"value"`
 	// 自带属性
 	Regex struct {
-		Pattern string `json:"pattern"`
-		Flags   string `json:"flags"`
+		Pattern []byte `json:"pattern"`
+		Flags   []byte `json:"flags"`
 	} `json:"regex"`
 }
 
@@ -162,7 +162,7 @@ func (r RegExpLiteral) Js() NodeLike {
 	panic("implement me")
 }
 
-func (r RegExpLiteral) String() NodeLike {
+func (r RegExpLiteral) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -197,7 +197,7 @@ func (p Programs) Js() NodeLike {
 	panic("implement me")
 }
 
-func (p Programs) String() NodeLike {
+func (p Programs) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -226,7 +226,7 @@ func (f Function) Js() NodeLike {
 	panic("implement me")
 }
 
-func (f Function) String() NodeLike {
+func (f Function) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -254,7 +254,7 @@ func (d Directive) Js() NodeLike {
 	panic("implement me")
 }
 
-func (d Directive) String() NodeLike {
+func (d Directive) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -281,7 +281,7 @@ func (b BlockStatement) Js() NodeLike {
 	panic("implement me")
 }
 
-func (b BlockStatement) String() NodeLike {
+func (b BlockStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -309,7 +309,7 @@ func (e EmptyStatement) Js() NodeLike {
 	panic("implement me")
 }
 
-func (e EmptyStatement) String() NodeLike {
+func (e EmptyStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -337,7 +337,7 @@ func (d DebuggerStatement) Js() NodeLike {
 	panic("implement me")
 }
 
-func (d DebuggerStatement) String() NodeLike {
+func (d DebuggerStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
@@ -346,6 +346,196 @@ func (d DebuggerStatement) isNodeLike() bool {
 }
 
 func (d DebuggerStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type WithStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Object ExpressionLike `json:"object"`
+	Body   StatementLike  `json:"body"`
+}
+
+func (w WithStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (w WithStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (w WithStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (w WithStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (w WithStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type ReturnStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Argument ExpressionLike `json:"argument"`
+}
+
+func (r ReturnStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (r ReturnStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (r ReturnStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (r ReturnStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (r ReturnStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type LabeledStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Label Identifier    `json:"label"`
+	Body  StatementLike `json:"body"`
+}
+
+func (l LabeledStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (l LabeledStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (l LabeledStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (l LabeledStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (l LabeledStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type BreakStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Label Identifier `json:"label"`
+}
+
+func (b BreakStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (b BreakStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (b BreakStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (b BreakStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (b BreakStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type ContinueStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Label Identifier `json:"label"`
+}
+
+func (c ContinueStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (c ContinueStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (c ContinueStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (c ContinueStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (c ContinueStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type IfStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Test       ExpressionLike `json:"test"`
+	Consequent StatementLike  `json:"consequent"`
+	Alternate  StatementLike  `json:"alternate"`
+}
+
+func (i IfStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (i IfStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (i IfStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (i IfStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (i IfStatement) isStatementLike() bool {
 	panic("implement me")
 }
 

@@ -538,10 +538,10 @@ func (c *ContinueStatement) ParseContinueStatement() ContinueStatement {
 }
 
 type IfStatement struct {
-	Statement
 	test       Expression
 	consequent Statement
-	alternate  Statement
+	Statement
+	alternate Statement
 }
 
 type SwitchStatement struct {

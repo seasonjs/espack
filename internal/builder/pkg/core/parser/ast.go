@@ -540,3 +540,380 @@ func (i IfStatement) isStatementLike() bool {
 }
 
 //=============================================================================
+
+type SwitchCase struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Test       ExpressionLike  `json:"test"`
+	Consequent []StatementLike `json:"consequent"`
+}
+
+func (s SwitchCase) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (s SwitchCase) Js() NodeLike {
+	panic("implement me")
+}
+
+func (s SwitchCase) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (s SwitchCase) isNodeLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type SwitchStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Discriminant ExpressionLike `json:"discriminant"`
+	Cases        []SwitchCase   `json:"cases"`
+}
+
+func (s SwitchStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (s SwitchStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (s SwitchStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (s SwitchStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (s SwitchStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type ThrowStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Argument ExpressionLike `json:"argument"`
+}
+
+func (t ThrowStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (t ThrowStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (t ThrowStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (t ThrowStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (t ThrowStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type TryStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Block     BlockStatement `json:"block"`
+	Handler   CatchClause    `json:"handler"`
+	Finalizer BlockStatement `json:"finalizer"`
+}
+
+func (t TryStatement) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (t TryStatement) Js() NodeLike {
+	panic("implement me")
+}
+
+func (t TryStatement) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (t TryStatement) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (t TryStatement) isStatementLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type CatchClause struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Param PatternLike    `json:"param"`
+	Body  BlockStatement `json:"body"`
+}
+
+func (c CatchClause) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (c CatchClause) Js() NodeLike {
+	panic("implement me")
+}
+
+func (c CatchClause) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (c CatchClause) isNodeLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type WhileStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Test ExpressionLike `json:"test"`
+	Body StatementLike  `json:"body"`
+}
+
+//=============================================================================
+
+type DoWhileStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Body StatementLike  `json:"body"`
+	Test ExpressionLike `json:"test"`
+}
+
+//=============================================================================
+
+type ForInitBodyLike interface {
+	StatementLike
+	DeclarationLike
+}
+
+type ForStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Init   ForInitBodyLike `json:"init"`
+	Test   ExpressionLike  `json:"test"`
+	Update ExpressionLike  `json:"update"`
+	Body   StatementLike   `json:"body"`
+}
+
+//=============================================================================
+
+type ForLeftBodyLike interface {
+	NodeLike
+}
+
+type ForInStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Left  ForLeftBodyLike `json:"left"`
+	Right ExpressionLike  `json:"right"`
+	Body  StatementLike   `json:"body"`
+}
+
+//=============================================================================
+
+type VariableDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Declarations []VariableDeclarator `json:"declarations"`
+	Kind         string               `json:"kind"`
+}
+
+//=============================================================================
+
+type VariableDeclarator struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Id   PatternLike    `json:"id"`
+	Init ExpressionLike `json:"init"`
+}
+
+//=============================================================================
+
+type ThisExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+}
+
+//=============================================================================
+
+type ArrayExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Elements []ExpressionLike `json:"elements"`
+}
+
+//=============================================================================
+
+type ObjectExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Properties []Property `json:"properties"`
+}
+
+//=============================================================================
+
+type PropertyKeyBodyLike interface {
+	NodeLike
+}
+
+type Property struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Key   PropertyKeyBodyLike `json:"key"`
+	Value ExpressionLike      `json:"value"`
+	Kind  string              `json:"kind"`
+}
+
+//=============================================================================
+
+type FunctionExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+}
+
+//=============================================================================
+
+type BinaryOperator string
+
+type BinaryExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Operator BinaryOperator `json:"operator"`
+	Left     ExpressionLike `json:"left"`
+	Right    ExpressionLike `json:"right"`
+}
+
+//=============================================================================
+
+type AssignmentOperator string
+
+type AssignmentLeftLike interface {
+	NodeLike
+}
+
+type AssignmentExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Operator AssignmentOperator `json:"operator"`
+	Left     AssignmentLeftLike `json:"left"`
+	Right    ExpressionLike     `json:"right"`
+}
+
+//=============================================================================
+
+type LogicalOperator string
+
+type LogicalExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Operator LogicalOperator `json:"operator"`
+	Left     ExpressionLike  `json:"left"`
+	Right    ExpressionLike  `json:"right"`
+}
+
+//=============================================================================
+
+type MemberExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Object   ExpressionLike `json:"object"`
+	Property ExpressionLike `json:"property"`
+	Computed bool           `json:"computed"`
+}
+
+//=============================================================================
+
+type ConditionalExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Test       ExpressionLike `json:"test"`
+	Alternate  ExpressionLike `json:"alternate"`
+	Consequent ExpressionLike `json:"consequent"`
+}
+
+//=============================================================================
+
+type CallExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Callee    ExpressionLike   `json:"callee"`
+	Arguments []ExpressionLike `json:"arguments"`
+}
+
+//=============================================================================
+
+type NewExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Callee    ExpressionLike   `json:"callee"`
+	Arguments []ExpressionLike `json:"arguments"`
+}
+
+//=============================================================================
+
+type SequenceExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Expressions []ExpressionLike `json:"expressions"`
+}

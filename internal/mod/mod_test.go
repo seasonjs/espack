@@ -2,10 +2,10 @@ package mod
 
 import (
 	"fmt"
+	"github.com/seasonjs/espack/internal/utils"
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"seasonjs/espack/internal/utils"
 	"testing"
 )
 

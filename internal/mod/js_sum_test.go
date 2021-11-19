@@ -2,9 +2,9 @@ package mod
 
 import (
 	"fmt"
+	"github.com/seasonjs/espack/internal/utils"
 	"io"
 	"os"
-	"seasonjs/espack/internal/utils"
 	"strings"
 	"testing"
 )

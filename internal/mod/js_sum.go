@@ -97,7 +97,7 @@ func (j *jsSum) WriteFile(path ...string) *jsSum {
 		filePath, _ = utils.FS.ConvertPath("./js.sum")
 	}
 	// 覆盖写入，如果不存在就创建
-	f, err := os.OpenFile(filePath, os.O_TRUNC|os.O_CREATE, 0666) //打开文件
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0666) //打开文件
 	defer f.Close()
 	for s, info := range j.knownList {
 		_, err = io.WriteString(f, fmt.Sprintf("%s %s %s %s\n", s, info.TarBall, info.Shasum, info.integrity)) //写入文件(字符串)

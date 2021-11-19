@@ -40,6 +40,7 @@ var _httpCli = &http.Client{
 		ExpectContinueTimeout: 1 * time.Second,
 	},
 }
+var registy = "https://registry.npmmirror.com"
 
 // 从npm远程获取的mod元数据，只解析需要解析的字段，减少解析耗时
 type modMeta struct {
@@ -69,8 +70,8 @@ type modInfo struct {
 
 func NewModInfo(name, version string) *modInfo {
 	// 需要从配置中获取如果没有则使用默认的
-	tarball := fmt.Sprintf("https://registry.npmjs.org/%s/-/%s-%s.tgz", name, name, version)
-	registry := fmt.Sprintf("https://registry.npmjs.org/%s/%s", name, version)
+	tarball := fmt.Sprintf("%s/%s/-/%s-%s.tgz", registy, name, name, version)
+	registry := fmt.Sprintf("%s/%s/%s", registy, name, version)
 	return &modInfo{
 		Name:     name,
 		Version:  version,
@@ -143,7 +144,7 @@ func (i *modInfo) FetchModInfo() *modInfo {
 }
 
 func (i *modInfo) FetchLastVersion(name string) string {
-	tagsUrl := fmt.Sprintf("https://registry.npmjs.org/-/package/%s/dist-tags", name)
+	tagsUrl := fmt.Sprintf("%s/-/package/%s/dist-tags", registy, name)
 	req, _ := http.NewRequest("GET", tagsUrl, nil)
 	// 通过设置请求头缩小元数据量
 	req.Header.Set("Accept", "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*")

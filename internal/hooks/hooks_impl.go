@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -92,9 +93,9 @@ func (c *hookContext) LogAll() *hookContext {
 func (c *hookContext) HoldAll() {
 	sig := make(chan os.Signal)
 	//监听所有信号
-	signal.Notify(sig)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	//fmt.Println("start!")
 
-	fmt.Println("接受到退出信号 : ", <-sig)
+	fmt.Println("接受到退出信号:", <-sig)
 	os.Exit(1)
 }

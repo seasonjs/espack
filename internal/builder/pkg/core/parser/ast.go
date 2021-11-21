@@ -843,7 +843,7 @@ type BinaryExpression struct {
 	JsT JsType         `json:"type"`
 	// 自带属性
 	Operator BinaryOperator `json:"operator"`
-	Left     ExpressionLike `json:"left"`
+	Left     ExpressionLike `json:"left"` //es2020 ExpressionLike | PrivateIdentifier;
 	Right    ExpressionLike `json:"right"`
 }
 
@@ -886,9 +886,10 @@ type MemberExpression struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Object   ExpressionLike `json:"object"` //es2015 super also is
-	Property ExpressionLike `json:"property"`
+	Object   ExpressionLike `json:"object"`   //es2015 super also is
+	Property ExpressionLike `json:"property"` //es2022 Expression | PrivateIdentifier;
 	Computed bool           `json:"computed"`
+	Optional bool           `json:"optional"` //es2020 ChainElement
 }
 
 //=============================================================================
@@ -912,6 +913,7 @@ type CallExpression struct {
 	// 自带属性
 	Callee    ExpressionLike   `json:"callee"`    //es2015 Super
 	Arguments []ExpressionLike `json:"arguments"` //es2015 SpreadElement
+	Optional  bool             `json:"optional"`  //es2021 ChainElement
 }
 
 //=============================================================================
@@ -1123,13 +1125,19 @@ type Class struct {
 
 //=============================================================================
 
+type ClassBodyLike interface {
+	isClassBodyLike() bool
+}
+
+//=============================================================================
+
 type ClassBody struct {
 	// 从Node 节点继承
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 
 	// 自带属性
-	Body []MethodDefinition `json:"body"`
+	Body []ClassBodyLike `json:"body"`
 }
 
 //=============================================================================
@@ -1140,7 +1148,7 @@ type MethodDefinition struct {
 	JsT JsType         `json:"type"`
 
 	// 自带属性
-	Key      ExpressionLike     `json:"key"`
+	Key      ExpressionLike     `json:"key"` // es2021  key: Expression | PrivateIdentifier;
 	Value    FunctionExpression `json:"value"`
 	Kind     string             `json:"kind"`
 	Computed bool               `json:"computed"`
@@ -1346,6 +1354,8 @@ func (i ImportNamespaceSpecifier) isImportSpecifierLike() bool {
 	panic("implement me")
 }
 
+//=============================================================================
+
 type ExportNamedDeclaration struct {
 	// 从Node 节点继承
 	Loc SourceLocation `json:"loc"`
@@ -1358,6 +1368,8 @@ type ExportNamedDeclaration struct {
 	Source      LiteralLike       `json:"source"`
 }
 
+//=============================================================================
+
 type ExportSpecifier struct {
 	// 从Node 节点继承
 	Loc SourceLocation `json:"loc"`
@@ -1367,6 +1379,8 @@ type ExportSpecifier struct {
 	Local    Identifier `json:"local"`
 	Exported Identifier `json:"exported"`
 }
+
+//=============================================================================
 
 type AnonymousDefaultExportedFunctionDeclaration struct {
 	// 从Node 节点继承
@@ -1385,6 +1399,8 @@ type AnonymousDefaultExportedFunctionDeclaration struct {
 	Async bool `json:"async"`
 }
 
+//=============================================================================
+
 type AnonymousDefaultExportedClassDeclaration struct {
 	// 从Node 节点继承
 	Loc SourceLocation `json:"loc"`
@@ -1396,8 +1412,13 @@ type AnonymousDefaultExportedClassDeclaration struct {
 	body       ClassBody
 }
 
+//=============================================================================
+
 type ExportDefaultDeclarationLike interface {
+	isExportDefaultDeclarationLike() bool
 }
+
+//=============================================================================
 
 type ExportDefaultDeclaration struct {
 	// 从Node 节点继承
@@ -1405,9 +1426,11 @@ type ExportDefaultDeclaration struct {
 	JsT JsType         `json:"type"`
 
 	//自带属性
-	Local       Identifier `json:"local"`
-	declaration ExportDefaultDeclarationLike
+	Local       Identifier                   `json:"local"`
+	Declaration ExportDefaultDeclarationLike `json:"declaration"`
 }
+
+//=============================================================================
 
 type ExportAllDeclaration struct {
 	// 从Node 节点继承
@@ -1415,11 +1438,13 @@ type ExportAllDeclaration struct {
 	JsT JsType         `json:"type"`
 
 	//自带属性
-	Local  Identifier `json:"local"`
-	source LiteralLike
+	Local    Identifier  `json:"local"`
+	Source   LiteralLike `json:"source"`
+	Exported Identifier  `json:"exported"` //es2020
 }
 
 //es2020
+//=============================================================================
 
 type BigIntLiteral struct {
 	// 从Node 节点继承
@@ -1428,4 +1453,74 @@ type BigIntLiteral struct {
 
 	//自带属性
 	Bigint string `json:"bigint"`
+}
+
+//=============================================================================
+
+type ChainExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	expression ChainElement
+}
+
+//=============================================================================
+
+type ChainElement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Optional bool `json:"optional"`
+}
+
+//=============================================================================
+
+type ImportExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	source ExpressionLike
+}
+
+//es2022
+//=============================================================================
+
+type PropertyDefinition struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Key      ExpressionLike `json:"key"`
+	Value    ExpressionLike `json:"value"`
+	Computed bool           `json:"computed"`
+	Static   bool           `json:"static"`
+}
+
+//=============================================================================
+
+type PrivateIdentifier struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Name string `json:"name"`
+}
+
+//=============================================================================
+
+type StaticBlock struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Body []StatementLike `json:"body"`
 }

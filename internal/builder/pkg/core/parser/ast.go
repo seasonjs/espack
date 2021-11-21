@@ -216,6 +216,10 @@ type Function struct {
 	Id     Identifier    `json:"id"`
 	Params []PatternLike `json:"params"`
 	Body   BlockBodyLike `json:"body"`
+	//es2015
+	Generator bool `json:"generator"`
+	//es2017
+	Async bool `json:"async"`
 }
 
 func (f Function) Jsonify() NodeLike {
@@ -666,7 +670,7 @@ type CatchClause struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Param PatternLike    `json:"param"`
+	Param PatternLike    `json:"param"` // es2019 The param is null if the catch binding is omitted. E.g., try { foo() } catch { bar() }
 	Body  BlockStatement `json:"body"`
 }
 
@@ -750,7 +754,7 @@ type VariableDeclaration struct {
 	JsT JsType         `json:"type"`
 	// 自带属性
 	Declarations []VariableDeclarator `json:"declarations"`
-	Kind         string               `json:"kind"`
+	Kind         string               `json:"kind"` //es5  "var"// es2015 "var" | "let" | "const"
 }
 
 //=============================================================================
@@ -779,7 +783,7 @@ type ArrayExpression struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Elements []ExpressionLike `json:"elements"`
+	Elements []ExpressionLike `json:"elements"` //es2015 Spread element
 }
 
 //=============================================================================
@@ -789,7 +793,7 @@ type ObjectExpression struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Properties []Property `json:"properties"`
+	Properties []Property `json:"properties"` //TODO  properties: [ Property | SpreadElement ];
 }
 
 //=============================================================================
@@ -806,6 +810,10 @@ type Property struct {
 	Key   PropertyKeyBodyLike `json:"key"`
 	Value ExpressionLike      `json:"value"`
 	Kind  string              `json:"kind"`
+	//es2015
+	Method    bool `json:"method"`
+	Shorthand bool `json:"shorthand"`
+	Computed  bool `json:"computed"`
 }
 
 //=============================================================================
@@ -814,6 +822,15 @@ type FunctionExpression struct {
 	// 从Node 节点继承
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Id     Identifier    `json:"id"`
+	Params []PatternLike `json:"params"`
+	Body   BlockBodyLike `json:"body"`
+	//es2015
+	Generator bool `json:"generator"`
+	//es2017
+	Async bool `json:"async"`
 }
 
 //=============================================================================
@@ -869,7 +886,7 @@ type MemberExpression struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Object   ExpressionLike `json:"object"`
+	Object   ExpressionLike `json:"object"` //es2015 super also is
 	Property ExpressionLike `json:"property"`
 	Computed bool           `json:"computed"`
 }
@@ -893,8 +910,8 @@ type CallExpression struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Callee    ExpressionLike   `json:"callee"`
-	Arguments []ExpressionLike `json:"arguments"`
+	Callee    ExpressionLike   `json:"callee"`    //es2015 Super
+	Arguments []ExpressionLike `json:"arguments"` //es2015 SpreadElement
 }
 
 //=============================================================================
@@ -905,7 +922,7 @@ type NewExpression struct {
 	JsT JsType         `json:"type"`
 	// 自带属性
 	Callee    ExpressionLike   `json:"callee"`
-	Arguments []ExpressionLike `json:"arguments"`
+	Arguments []ExpressionLike `json:"arguments"` //es2015 SpreadElement
 }
 
 //=============================================================================
@@ -916,4 +933,499 @@ type SequenceExpression struct {
 	JsT JsType         `json:"type"`
 	// 自带属性
 	Expressions []ExpressionLike `json:"expressions"`
+}
+
+//es2015
+//=============================================================================
+
+type Program struct {
+	sourceType string
+	body       []BlockBodyLike
+}
+
+//=============================================================================
+
+type ForOfStatement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	Left  ForLeftBodyLike `json:"left"`
+	Right ExpressionLike  `json:"right"`
+	Body  StatementLike   `json:"body"`
+	//es2018
+	Await bool `json:"await"`
+}
+
+//=============================================================================
+
+type Super struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+}
+
+func (s Super) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (s Super) Js() NodeLike {
+	panic("implement me")
+}
+
+func (s Super) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (s Super) isNodeLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type SpreadElement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+	// 自带属性
+	argument ExpressionLike
+}
+
+//=============================================================================
+
+type ArrowFunctionExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Id     Identifier    `json:"id"`
+	Params []PatternLike `json:"params"`
+	Body   BlockBodyLike `json:"body"`
+	//es2015
+	Generator  bool `json:"generator"` // 必须是false
+	Expression bool `json:"expression"`
+	//es2017
+	Async bool `json:"async"`
+}
+
+//=============================================================================
+
+type YieldExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Argument ExpressionLike `json:"argument"`
+	Delegate bool           `json:"delegate"`
+}
+
+//=============================================================================
+
+type TemplateElement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Tail  bool `json:"tail"`
+	Value struct {
+		Cooked string `json:"cooked"` //in es2018 If the template literal is tagged and the text has an invalid escape, cooked will be null, e.g., tag`\unicode and \u{55}`
+		Raw    string `json:"raw"`
+	} `json:"value"`
+}
+
+//=============================================================================
+
+type TemplateLiteral struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	quasis      []TemplateElement `json:"quasis"`
+	expressions []ExpressionLike  `json:"expressions"`
+}
+
+//=============================================================================
+
+type AssignmentProperty struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Value     PatternLike         `json:"value"`
+	Kind      string              `json:"kind"`
+	Method    bool                `json:"method"` //must be false
+	Key       PropertyKeyBodyLike `json:"key"`
+	Shorthand bool                `json:"shorthand"`
+	Computed  bool                `json:"computed"`
+}
+
+//=============================================================================
+
+type ObjectPattern struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Properties []AssignmentProperty `json:"properties"` // TODO in es2018 properties: [ AssignmentProperty | RestElement ];
+}
+
+//=============================================================================
+
+type ArrayPattern struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Elements []PatternLike `json:"elements"`
+}
+
+//=============================================================================
+
+type RestElement struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Argument PatternLike `json:"argument"`
+}
+
+//=============================================================================
+
+type AssignmentPattern struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Left  PatternLike    `json:"left"`
+	Right ExpressionLike `json:"right"`
+}
+
+//=============================================================================
+
+type Class struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	superClass ExpressionLike
+	body       ClassBody
+}
+
+//=============================================================================
+
+type ClassBody struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Body []MethodDefinition `json:"body"`
+}
+
+//=============================================================================
+
+type MethodDefinition struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Key      ExpressionLike     `json:"key"`
+	Value    FunctionExpression `json:"value"`
+	Kind     string             `json:"kind"`
+	Computed bool               `json:"computed"`
+	Static   bool               `json:"static"`
+}
+
+//=============================================================================
+
+type ClassDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Id Identifier `json:"id"`
+}
+
+//=============================================================================
+
+type ClassExpression struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	superClass ExpressionLike
+	body       ClassBody
+}
+
+//=============================================================================
+
+type MetaProperty struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Meta     Identifier `json:"meta"`
+	Property Identifier `json:"property"`
+}
+
+//=============================================================================
+
+type ModuleDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+}
+
+func (m ModuleDeclaration) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (m ModuleDeclaration) Js() NodeLike {
+	panic("implement me")
+}
+
+func (m ModuleDeclaration) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (m ModuleDeclaration) isNodeLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type ModuleSpecifier struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local Identifier `json:"local"`
+}
+
+func (m ModuleSpecifier) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (m ModuleSpecifier) Js() NodeLike {
+	panic("implement me")
+}
+
+func (m ModuleSpecifier) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (m ModuleSpecifier) isNodeLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type ImportSpecifierLike interface {
+	NodeLike
+	isImportSpecifierLike() bool
+}
+
+//=============================================================================
+
+type ImportDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Specifiers []ImportSpecifierLike `json:"specifiers"`
+	Source     LiteralLike           `json:"source"`
+}
+
+//=============================================================================
+
+type ImportSpecifier struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local    Identifier `json:"local"`
+	Imported Identifier `json:"imported"`
+}
+
+func (i ImportSpecifier) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportSpecifier) Js() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportSpecifier) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportSpecifier) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (i ImportSpecifier) isImportSpecifierLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type ImportDefaultSpecifier struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local Identifier `json:"local"`
+}
+
+func (i ImportDefaultSpecifier) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportDefaultSpecifier) Js() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportDefaultSpecifier) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportDefaultSpecifier) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (i ImportDefaultSpecifier) isImportSpecifierLike() bool {
+	panic("implement me")
+}
+
+//=============================================================================
+
+type ImportNamespaceSpecifier struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local Identifier `json:"local"`
+}
+
+func (i ImportNamespaceSpecifier) Jsonify() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportNamespaceSpecifier) Js() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportNamespaceSpecifier) Parse() NodeLike {
+	panic("implement me")
+}
+
+func (i ImportNamespaceSpecifier) isNodeLike() bool {
+	panic("implement me")
+}
+
+func (i ImportNamespaceSpecifier) isImportSpecifierLike() bool {
+	panic("implement me")
+}
+
+type ExportNamedDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local       Identifier        `json:"local"`
+	Declaration DeclarationLike   `json:"declaration"`
+	Specifiers  []ExportSpecifier `json:"specifiers"`
+	Source      LiteralLike       `json:"source"`
+}
+
+type ExportSpecifier struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local    Identifier `json:"local"`
+	Exported Identifier `json:"exported"`
+}
+
+type AnonymousDefaultExportedFunctionDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Id     Identifier    `json:"id"` //must be null
+	Params []PatternLike `json:"params"`
+	Body   BlockBodyLike `json:"body"`
+
+	//es2015
+	Generator bool `json:"generator"`
+
+	//es2017
+	Async bool `json:"async"`
+}
+
+type AnonymousDefaultExportedClassDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	// 自带属性
+	Id         Identifier `json:"id"` //must be null
+	superClass ExpressionLike
+	body       ClassBody
+}
+
+type ExportDefaultDeclarationLike interface {
+}
+
+type ExportDefaultDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local       Identifier `json:"local"`
+	declaration ExportDefaultDeclarationLike
+}
+
+type ExportAllDeclaration struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Local  Identifier `json:"local"`
+	source LiteralLike
+}
+
+//es2020
+
+type BigIntLiteral struct {
+	// 从Node 节点继承
+	Loc SourceLocation `json:"loc"`
+	JsT JsType         `json:"type"`
+
+	//自带属性
+	Bigint string `json:"bigint"`
 }

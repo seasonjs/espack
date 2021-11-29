@@ -2,6 +2,7 @@ package utils
 
 type version struct {
 }
+
 type versionCtrl struct {
 	version string
 }

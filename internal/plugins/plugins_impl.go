@@ -11,7 +11,7 @@ func NewPluginQueue() *PluginQueue {
 // Add 添加插件
 func (p *PluginQueue) Add(t Plugin) {
 	p.lock.Lock()
-	p.lock.Unlock()
+	defer p.lock.Unlock()
 	p.plugins = append(p.plugins, t)
 }
 

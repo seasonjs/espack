@@ -1,8 +1,36 @@
 package parser
 
-type JsType string
+type JsType string //需要注意的是这里的json转换是不符合我们需求的，所以应该直接使用string
+// String values encode as JSON strings coerced to valid UTF-8,
+// replacing invalid bytes with the Unicode replacement rune.
+// So that the JSON will be safe to embed inside HTML <script> tags,
+// the string is encoded using HTMLEscape,
+// which replaces "<", ">", "&", U+2028, and U+2029 are escaped
+// to "\u003c","\u003e", "\u0026", "\u2028", and "\u2029".
+// This replacement can be disabled when using an Encoder,
+// by calling SetEscapeHTML(false).
+//
+// Array and slice values encode as JSON arrays, except that
+// []byte encodes as a base64-encoded string, and a nil slice
+// encodes as the null JSON value.
 
-// TODO 需要重新设计枚举，并且将lexer的枚举统一
+//类型声明基于 1. https://github.com/estree/estree/blob/master/es5.md
+//           2. https://github.com/cst/cst
+//第二参考文档 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators
+// babel 是在node 节点扩展属性，但是这个方法go是肯定不合理的，所以我们只能挨个解析
+// 与babel 类似的流程，可以先解析成类型再递进的深入逐渐解析到最终类型
+// babel 转义流程
+// parseTopLevel->parseProgram-> parseBlockBody->parseBlockOrModuleBlockBody->loop(parseStatement)
+//							|
+//							->parseInterpreterDirective
+//parseStatement-> parseDecorators
+//				|
+//				->parseStatementContent->switch(parseAnyStatement)
+// esbuild
+//Parse->newParser->NewLexer->toAST
+// espack 暂定的流程
+// Parse->NewLexer-> ParseProgram->ParseStatement
+
 const (
 	IdentifierType            JsType = "Identifier" // Identifier type
 	LiteralType               JsType = "Literal"
@@ -99,7 +127,7 @@ type Position struct {
 }
 
 type SourceLocation struct {
-	Source []byte   `json:"source"`
+	Source string   `json:"source"`
 	Start  Position `json:"start"`
 	End    Position `json:"end"`
 }
@@ -111,7 +139,7 @@ type Identifier struct {
 	Loc SourceLocation `json:"loc"`
 	JsT JsType         `json:"type"`
 	// 自带属性
-	Name []byte `json:"name"`
+	Name string `json:"name"`
 }
 
 func (i Identifier) Jsonify() NodeLike {
@@ -146,11 +174,11 @@ type RegExpLiteral struct {
 	JsT JsType         `json:"type"`
 	//Literal
 	//Value: Parse | boolean | null | number | RegExp;
-	Value []byte `json:"value"`
+	Value string `json:"value"`
 	// 自带属性
 	Regex struct {
-		Pattern []byte `json:"pattern"`
-		Flags   []byte `json:"flags"`
+		Pattern string `json:"pattern"`
+		Flags   string `json:"flags"`
 	} `json:"regex"`
 }
 
@@ -247,7 +275,7 @@ type Directive struct {
 
 	// 自带属性
 	Expression LiteralLike `json:"expression"`
-	Directive  []byte      `json:"directive"`
+	Directive  string      `json:"directive"`
 }
 
 func (d Directive) Jsonify() NodeLike {
@@ -754,7 +782,7 @@ type VariableDeclaration struct {
 	JsT JsType         `json:"type"`
 	// 自带属性
 	Declarations []VariableDeclarator `json:"declarations"`
-	Kind         string               `json:"kind"` //es5  "var"// es2015 "var" | "let" | "const"
+	Kind         string               `json:"kind"` //es5  "var"// es2015 "var" | "let" | "const" 这里是可以使用string的
 }
 
 //=============================================================================

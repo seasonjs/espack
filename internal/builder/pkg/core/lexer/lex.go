@@ -10,7 +10,7 @@
 package lexer
 
 import (
-	"github.com/seasonjs/espack/internal/builder/pkg/core/in"
+	"github.com/seasonjs/espack/internal/builder/pkg/core/input"
 	"unicode"
 	"unicode/utf8"
 )
@@ -46,8 +46,8 @@ type Position struct {
 }
 
 type SourceLocation struct {
-	//TODO 是否需要替换成[][]byte
-	source   string
+	//TODO 是否需要替换成[]byte
+	source   []byte
 	StartLoc Position
 	EndLoc   Position
 	Start    int
@@ -62,7 +62,7 @@ type Cache struct {
 // Lexer is the state for the lexer.
 type Lexer struct {
 	Cache              Cache
-	r                  *in.Input
+	r                  *input.Input
 	err                error
 	prevLineTerminator bool
 	prevNumericLiteral bool
@@ -76,7 +76,7 @@ type Lexer struct {
 }
 
 // NewLexer returns a new Lexer for a given io.Reader.
-func NewLexer(r *in.Input) *Lexer {
+func NewLexer(r *input.Input) *Lexer {
 	return &Lexer{
 		r:                  r,
 		prevLineTerminator: true,
@@ -109,7 +109,7 @@ func (l *Lexer) RegExp() (TokenType, []byte) {
 	} else if 1 < l.r.Offset() && l.r.Peek(-1) == '=' && l.r.Peek(-2) == '/' {
 		l.r.Move(-2)
 	} else {
-		l.err = in.NewErrorLexer(l.r, "expected / or /=")
+		l.err = input.NewErrorLexer(l.r, "expected / or /=")
 		return ErrorToken, nil
 	}
 	l.r.Skip() // trick to set start = pos
@@ -117,7 +117,7 @@ func (l *Lexer) RegExp() (TokenType, []byte) {
 	if l.consumeRegExpToken() {
 		return RegExpToken, l.r.Shift()
 	}
-	l.err = in.NewErrorLexer(l.r, "unexpected EOF or newline")
+	l.err = input.NewErrorLexer(l.r, "unexpected EOF or newline")
 	return ErrorToken, nil
 }
 
@@ -312,7 +312,7 @@ func (l *Lexer) Next() {
 		if l.consumeIdentifierToken() {
 			if prevNumericLiteral {
 				l.countEnd()
-				l.err = in.NewErrorLexer(l.r, "unexpected identifier after number")
+				l.err = input.NewErrorLexer(l.r, "unexpected identifier after number")
 				l.setCache(ErrorToken, nil, l.Loc)
 				return
 			} else if keyword, ok := Keywords[string(l.r.Lexeme())]; ok {
@@ -350,7 +350,7 @@ func (l *Lexer) Next() {
 	}
 
 	r, _ := l.r.PeekRune(0)
-	l.err = in.NewErrorLexer(l.r, "unexpected %s", in.Printable(r))
+	l.err = input.NewErrorLexer(l.r, "unexpected %s", input.Printable(r))
 	l.setCache(ErrorToken, l.r.Shift(), l.Loc)
 	return
 }
@@ -688,7 +688,7 @@ func (l *Lexer) consumeNumericToken() TokenType {
 				}
 				return HexadecimalToken
 			}
-			l.err = in.NewErrorLexer(l.r, "invalid hexadecimal number")
+			l.err = input.NewErrorLexer(l.r, "invalid hexadecimal number")
 			return ErrorToken
 		} else if l.r.Peek(0) == 'b' || l.r.Peek(0) == 'B' {
 			l.r.Move(1)
@@ -697,7 +697,7 @@ func (l *Lexer) consumeNumericToken() TokenType {
 				}
 				return BinaryToken
 			}
-			l.err = in.NewErrorLexer(l.r, "invalid binary number")
+			l.err = input.NewErrorLexer(l.r, "invalid binary number")
 			return ErrorToken
 		} else if l.r.Peek(0) == 'o' || l.r.Peek(0) == 'O' {
 			l.r.Move(1)
@@ -706,13 +706,13 @@ func (l *Lexer) consumeNumericToken() TokenType {
 				}
 				return OctalToken
 			}
-			l.err = in.NewErrorLexer(l.r, "invalid octal number")
+			l.err = input.NewErrorLexer(l.r, "invalid octal number")
 			return ErrorToken
 		} else if l.r.Peek(0) == 'n' {
 			l.r.Move(1)
 			return BigIntToken
 		} else if '0' <= l.r.Peek(0) && l.r.Peek(0) <= '9' {
-			l.err = in.NewErrorLexer(l.r, "legacy octal numbers are not supported")
+			l.err = input.NewErrorLexer(l.r, "legacy octal numbers are not supported")
 			return ErrorToken
 		}
 	} else if first != '.' {
@@ -745,7 +745,7 @@ func (l *Lexer) consumeNumericToken() TokenType {
 			l.r.Move(1)
 		}
 		if !l.consumeDigit() {
-			l.err = in.NewErrorLexer(l.r, "invalid number")
+			l.err = input.NewErrorLexer(l.r, "invalid number")
 			return ErrorToken
 		}
 		for l.consumeDigit() {

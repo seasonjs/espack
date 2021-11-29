@@ -1,17 +1,17 @@
 package parser_old
 
 import (
-	"github.com/seasonjs/espack/internal/builder/pkg/core/in"
+	"github.com/seasonjs/espack/internal/builder/pkg/core/input"
 	"github.com/seasonjs/espack/internal/builder/pkg/core/lexer"
 	"testing"
 )
 
 func TestES5(t *testing.T) {
-	l := lexer.NewLexer(in.NewInputString("/*test */ \r\n import React from 'react';Whitespace import React from '../React';\r\n  if (React}) { console?.log('React has been import'); }"))
+	l := lexer.NewLexer(input.NewInputString("/*test */ \r\n import React from 'react';Whitespace import React from '../React';\r\n  if (React}) { console?.log('React has been import'); }"))
 	t.Log(l)
 }
 func TestProgram_ParseProgram(t *testing.T) {
-	p := NewProgram(in.NewInputString("/*test */ \r\n import React from 'react';Whitespace import React from '../React';\r\n  if (React}) { console?.log('React has been import'); }"))
+	p := NewProgram(input.NewInputString("/*test */ \r\n import React from 'react';Whitespace import React from '../React';\r\n  if (React}) { console?.log('React has been import'); }"))
 	p.ParseProgram()
 }
 func TestBreak_Continue(t *testing.T) {
@@ -31,7 +31,7 @@ func TestBreak_Continue(t *testing.T) {
 	//	//p.body = append(p.body, stmt)
 	//}
 	//
-	p := NewProgram(in.NewInputString("while (i < 6) {\n    if (i == 3) {\n      break;\n    }\n    i += 1;\n  }"))
+	p := NewProgram(input.NewInputString("while (i < 6) {\n    if (i == 3) {\n      break;\n    }\n    i += 1;\n  }"))
 	p.ParseProgram()
 	t.Log(p)
 

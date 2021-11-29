@@ -2,7 +2,7 @@ package parser_old
 
 import (
 	"fmt"
-	"github.com/seasonjs/espack/internal/builder/pkg/core/in"
+	"github.com/seasonjs/espack/internal/builder/pkg/core/input"
 	"github.com/seasonjs/espack/internal/builder/pkg/core/lexer"
 	"github.com/seasonjs/espack/internal/logger"
 	"io"
@@ -334,7 +334,7 @@ type Program struct {
 
 }
 
-func NewProgram(r *in.Input) *Program {
+func NewProgram(r *input.Input) *Program {
 	//TODO 需要处理顶级注释
 	topLevelNode := NewNode(lexer.NewLexer(r))
 	//不在顶层存储降低空间占用

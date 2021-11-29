@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT style
 // license that can be found in https://github.com/tdewolff/parse/blob/master/LICENSE.md
 
-package in
+package input
 
 import (
 	"io"
@@ -103,7 +103,7 @@ func (z *Input) PeekErr(pos int) error {
 }
 
 // Peek returns the ith byte relative to the end position.
-// Peek returns 0 when an error has occurred, Err returns the erroz.
+// returns 0 when an error has occurred, Err returns the erroz.
 func (z *Input) Peek(pos int) byte {
 	pos += z.pos
 	return z.buf[pos]

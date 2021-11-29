@@ -129,14 +129,14 @@ type Comment struct {
 //这里的状态大体上是用于生成sourcemap的
 
 type State struct {
-	*lexer.SourceLocation
+	*lexer_old.SourceLocation
 }
 
 //===================================================================================
 
 //Node objects
 type Node struct {
-	*lexer.Lexer
+	*lexer_old.Lexer
 	State            *State
 	jsT              JsType
 	leadingComments  []Comment
@@ -145,7 +145,7 @@ type Node struct {
 }
 
 // NewNode 所有节点程序都可以被视为Node
-func NewNode(lex *lexer.Lexer) *Node {
+func NewNode(lex *lexer_old.Lexer) *Node {
 	node := &Node{}
 	node.Lexer = lex
 	return node
@@ -163,7 +163,7 @@ func (n *Node) StartNode() *Node {
 }
 
 // StartNodeAt 从指定位置开始识别为Node 此方法会新建Node实例
-func (n *Node) StartNodeAt(loc lexer.SourceLocation) *Node {
+func (n *Node) StartNodeAt(loc lexer_old.SourceLocation) *Node {
 	node := &Node{}
 	node.Lexer = n.Lexer
 	node.Lexer.Loc = loc
@@ -179,7 +179,7 @@ func (n *Node) StartNodeAtNode(node Node) *Node {
 	return n.StartNodeAt(node.Loc)
 }
 
-func (n *Node) finishNodeAt(loc lexer.SourceLocation) {
+func (n *Node) finishNodeAt(loc lexer_old.SourceLocation) {
 	n.State = &State{
 		&loc,
 	}
@@ -191,7 +191,7 @@ func (n *Node) finishNode() {
 }
 
 func (n *Node) Next() {
-	if n.Cache.TT == lexer.WhitespaceToken {
+	if n.Cache.TT == lexer_old.WhitespaceToken {
 		n.Lexer.Next()
 	}
 }
@@ -231,15 +231,15 @@ func StartStatement(node *Node) *Statement {
 
 func (s *Statement) ParseStatement() StatementLike {
 	switch s.Cache.TT {
-	case lexer.BreakToken:
+	case lexer_old.BreakToken:
 		return StartBreakStatement(s).ParseBreakStatement()
-	case lexer.ContinueToken:
+	case lexer_old.ContinueToken:
 		return StartContinueStatement(s).ParseContinueStatement()
-	case lexer.DebuggerToken:
+	case lexer_old.DebuggerToken:
 		return StartDebuggerStatement(s).ParseDebuggerStatement()
-	case lexer.DoToken:
+	case lexer_old.DoToken:
 		return StartDoWhileStatement(s).ParseDoWhileStatement()
-	case lexer.ForToken:
+	case lexer_old.ForToken:
 		return StartForBasicStatement(s).ParseAllForStatement()
 	//case lexer.FunctionToken:
 	//	//...
@@ -300,7 +300,7 @@ func StartIdentifier(node *Node) *Identifier {
 
 func (i *Identifier) ParseIdentifier() *Identifier {
 	//真的扫描到了 IdentifierToken
-	if i.Cache.TT == lexer.IdentifierToken {
+	if i.Cache.TT == lexer_old.IdentifierToken {
 		i.name = string(i.Cache.Text)
 	}
 	//则说明其实没有Identifier
@@ -334,9 +334,9 @@ type Program struct {
 
 }
 
-func NewProgram(r *input.Input) *Program {
+func NewProgram(r *input_old.Input) *Program {
 	//TODO 需要处理顶级注释
-	topLevelNode := NewNode(lexer.NewLexer(r))
+	topLevelNode := NewNode(lexer_old.NewLexer(r))
 	//不在顶层存储降低空间占用
 	//topLevelNode.tokenValue = r.Bytes()
 	//Line >=1
@@ -366,7 +366,7 @@ func (p *Program) ParseProgram() *Program {
 	//}
 	for {
 		p.Next()
-		if p.Cache.TT == lexer.ErrorToken {
+		if p.Cache.TT == lexer_old.ErrorToken {
 			if p.Err() != io.EOF {
 				logger.Fail(fmt.Errorf("%s:%s:%v", p.Cache.Text, p.Err(), p.Cache.Loc), "Error on line")
 			}
@@ -422,7 +422,7 @@ func (s *BlockStatement) ParseBlockStatementBody() {
 	for {
 		s.Next()
 		//TODO: 这个的逻辑是否正确？
-		if s.Cache.TT == lexer.CloseBraceToken {
+		if s.Cache.TT == lexer_old.CloseBraceToken {
 			if s.Err() != io.EOF {
 				logger.Fail(fmt.Errorf("%s:%s:%v", s.Cache.Text, s.Err(), s.Cache.Loc), "Error on line")
 			}
@@ -503,7 +503,7 @@ func (s *BreakStatement) ParseBreakStatement() BreakStatement {
 	s.jsT = BreakStatementType
 	s.Next()
 	// 如果没有; 这意味着Break有label
-	if s.Cache.TT != lexer.LineTerminatorToken {
+	if s.Cache.TT != lexer_old.LineTerminatorToken {
 		n := s.StartNode()
 		ider := StartIdentifier(n).ParseIdentifier()
 		s.label = ider
@@ -529,7 +529,7 @@ func StartContinueStatement(s *Statement) *ContinueStatement {
 func (c *ContinueStatement) ParseContinueStatement() ContinueStatement {
 	c.jsT = ContinueStatementType
 	// 这意味着Break有label
-	if c.Cache.TT != lexer.LineTerminatorToken {
+	if c.Cache.TT != lexer_old.LineTerminatorToken {
 		n := c.StartNode()
 		ider := StartIdentifier(n).ParseIdentifier()
 		c.label = ider
@@ -614,7 +614,7 @@ func (d *DoWhileStatement) ParseDoWhileStatement() *DoWhileStatement {
 	d.body = d.ParseStatement()
 	d.Next()
 	//必须是While关键字
-	if d.Cache.TT == lexer.WhileToken {
+	if d.Cache.TT == lexer_old.WhileToken {
 		//parseExpression
 	} else {
 		//报错
@@ -673,7 +673,7 @@ func (f *ForBasicStatement) ParseAllForStatement() StatementLike {
 	f.Next()
 	//for 结构体必须是通过（）包裹
 
-	if f.Cache.TT == lexer.OpenParenToken {
+	if f.Cache.TT == lexer_old.OpenParenToken {
 		parenTrack++
 		f.Next()
 		//if {

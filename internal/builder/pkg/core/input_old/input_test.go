@@ -1,4 +1,4 @@
-package input
+package input_old
 
 import (
 	"io"

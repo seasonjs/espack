@@ -7,7 +7,7 @@ import (
 
 func TestJsonBuild(t *testing.T) {
 	s := PrivateIdentifier{
-		Name: []byte("abc"),
+		Name: "abc",
 	}
 	j, _ := json.Marshal(s)
 	t.Log(j)

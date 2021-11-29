@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT style
 // license that can be found in https://github.com/tdewolff/parse/blob/master/LICENSE.md
 
-package lexer
+package lexer_old
 
 // AsIdentifierName returns true if a valid identifier name is given.
 func AsIdentifierName(b []byte) bool {

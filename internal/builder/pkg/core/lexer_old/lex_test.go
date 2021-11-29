@@ -1,4 +1,4 @@
-package lexer
+package lexer_old
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 func TestLexer(t *testing.T) {
-	l := NewLexer(input.NewInputString(`
+	l := NewLexer(input_old.NewInputString(`
 	function(a){
 		console.log('test lexer')
 	}

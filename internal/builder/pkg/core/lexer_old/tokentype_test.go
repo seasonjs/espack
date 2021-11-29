@@ -1,4 +1,4 @@
-package lexer
+package lexer_old
 
 import (
 	"testing"

@@ -5,8 +5,46 @@
 package scanner
 
 import (
+	"io"
 	"unicode/utf8"
 )
+
+type Scanner struct {
+	r      io.Reader
+	buf    []byte //内部缓存的buf长度
+	line   int    //行号
+	column int    //列号
+	pos    int    //byte 的index
+	token  []byte //当前的token
+	tt     string //当前的token的类型
+	err    error  //遇到的错误
+}
+
+// NewScanner returns a new Scanner to read from r.
+// The split function defaults to ScanLines.
+func NewScanner(r io.Reader) *Scanner {
+	return &Scanner{
+		r: r,
+	}
+}
+
+// Err returns the first non-EOF error that was encountered by the Scanner.
+func (s *Scanner) Err() error {
+	if s.err == io.EOF {
+		return nil
+	}
+	return s.err
+}
+
+// Bytes bytes格式返回当前token
+func (s *Scanner) Bytes() []byte {
+	return s.token
+}
+
+// Text String 格式返回当前token
+func (s *Scanner) Text() string {
+	return string(s.token)
+}
 
 // isSpace 是否是空格
 func isSpace(r rune) bool {
@@ -29,10 +67,6 @@ func isSpace(r rune) bool {
 		return true
 	}
 	return false
-}
-
-func is() {
-
 }
 
 // ScanKeyWords 分割代码关键词 如果是空格则去除

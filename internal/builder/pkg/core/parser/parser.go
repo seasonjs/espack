@@ -1,10 +1,5 @@
 package parser
 
-import (
-	"github.com/seasonjs/espack/internal/builder/pkg/core/input"
-	"github.com/seasonjs/espack/internal/builder/pkg/core/lexer_old"
-)
-
 // 这里主要参考了
 // go parse 项目 https://github.com/tdewolff/parse/tree/master/js
 //

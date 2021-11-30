@@ -46,8 +46,8 @@ const (
 )
 
 type Parser interface {
-	Reader(files map[string]*input_old.Input) //资源读取
-	Lexer(lex *lexer_old.Lexer)               // 词法分析器
+	Reader(files map[string][]byte) //资源读取
+	//Lexer(lex *lexer_old.Lexer)               // 词法分析器
 
 	//TODO: 增加之后的转换和填充
 
@@ -57,10 +57,10 @@ type Parser interface {
 }
 type DefaultParserImpl struct {
 	JSTarget ESVersion //需要支持的es版本
-	Inputs   map[string]*input_old.Input
+	Inputs   map[string][]byte
 	Extends  []ESExtends
 	ast      map[string]Program
-	lexer    *lexer_old.Lexer
+	//lexer    *lexer_old.Lexer
 }
 
 // DefaultParser 使用默认的解析器
@@ -72,14 +72,14 @@ func DefaultParser() Parser {
 }
 
 // Reader 设置要读取的文件
-func (t DefaultParserImpl) Reader(files map[string]*input_old.Input) {
+func (t DefaultParserImpl) Reader(files map[string][]byte) {
 	t.Inputs = files
 }
 
-// Lexer 设置Lexer
-func (t DefaultParserImpl) Lexer(lex *lexer_old.Lexer) {
-	t.lexer = lex
-}
+//// Lexer 设置Lexer
+//func (t DefaultParserImpl) Lexer(lex *lexer_old.Lexer) {
+//	t.lexer = lex
+//}
 
 //func (t DefaultParserImpl) Transform() {
 //	panic("implement me")

@@ -51,7 +51,9 @@ func TestRead(t *testing.T) {
 	//		t.Log("close error")
 	//	}
 	//}(open)
-	var buff []byte
+	//
+	//这样写就代表建立了一个大小为2的缓存区
+	buff := make([]byte, 2)
 	_, err := strings.NewReader(`
 	// this is an Comment 
 	`).Read(buff)

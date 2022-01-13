@@ -1,8 +1,7 @@
-package parser
+package js_parser
 
 // 这里主要参考了
 // go parse 项目 https://github.com/tdewolff/parse/tree/master/js
-//
 // babel 原理文章 https://segmentfault.com/a/1190000017879365
 // 以及 babel 项目
 // esbuild 项目  https://github.com/evanw/esbuild
@@ -12,6 +11,13 @@ package parser
 // Lexer 暂时使用github.com/tdewolff/parse工具进行生成 但是如果要生成jsx 和ts 这个需要进行改造 ：）
 // 更新一下，放弃直接使用 go parse 因为它缺少 token前移动 代码位置等信息 但是它的类型推断的使用是值得借鉴的
 // 根据estree 进行分组继承可以有效实现babel相应功能并且会为兼容babel预留设计空间
+
+// 2022.1.13 更新一下，重新梳理了一下这里的逻辑，我觉得不应该是lexer操作移动然后在再生成语法树应该理解为：
+// 需要有一个遍历到工具包buffer_scanner，这个buffer scanner 足够低级，只是为了能够对buffer实现类型string的操作
+// 然后我们通过 scanner 进行逐行解析，最后我们在这个移动的过程中构造一个AST即可，也就是说我们会生成一个语法树
+// 即我们都会生成ast，我们不会重复解析已经解析过到内容，但是我们可能会打断前进，返回到之前到位置，再次进行解析。
+// @Note 在解析的过程中为了优化内存占用，使用buffer比较合理，但是这样还不如直接全部读取然后使用string，
+//  生成的时候我们会频繁操作拼接所以也是使用buffer更合理
 
 type ESVersion int
 

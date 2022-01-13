@@ -1,6 +1,8 @@
-package parser
+package js_parser
 
-type JsType string //需要注意的是这里的json转换是不符合我们需求的，所以应该直接使用string
+type JsType string
+
+//需要注意的是这里的json转换是不符合我们需求的，所以应该直接使用string
 // String values encode as JSON strings coerced to valid UTF-8,
 // replacing invalid bytes with the Unicode replacement rune.
 // So that the JSON will be safe to embed inside HTML <script> tags,
@@ -81,42 +83,42 @@ type NodeLike interface {
 	Jsonify() NodeLike //to json
 	Js() NodeLike      //to js
 	Parse() NodeLike   //to ast
-	isNodeLike() bool
+	isNodeLike()
 }
 
 type StatementLike interface {
 	NodeLike
-	isStatementLike() bool //just bind type , never call
+	isStatementLike() //just bind type , never call
 }
 type ExpressionLike interface {
 	NodeLike
-	isExpressionLike() bool //just bind type , never call
+	isExpressionLike() //just bind type , never call
 }
 
 type PatternLike interface {
 	NodeLike
-	isPatternLike() bool //just bind type , never call
+	isPatternLike() //just bind type , never call
 }
 
 type FunctionLike interface {
 	NodeLike
-	isFunctionLike() bool //just bind type , never call
+	isFunctionLike() //just bind type , never call
 }
 
 type DeclarationLike interface {
 	StatementLike
-	isDeclarationLike() bool //just bind type , never call
+	isDeclarationLike() //just bind type , never call
 }
 
 type LiteralLike interface {
 	ExpressionLike
-	isLiteralLike() bool //just bind type , never call
+	isLiteralLike() //just bind type , never call
 }
 
 // BlockBodyLike 这个类型是一个特殊的类型，它是因为go 而特殊定制的
 type BlockBodyLike interface {
 	StatementLike
-	isBlockBodyLike() bool //just bind type , never call
+	isBlockBodyLike() //just bind type , never call
 }
 
 //=============================================================================
@@ -154,15 +156,15 @@ func (i Identifier) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (i Identifier) isNodeLike() bool {
+func (i Identifier) isNodeLike() {
 	panic("implement me")
 }
 
-func (i Identifier) isExpressionLike() bool {
+func (i Identifier) isExpressionLike() {
 	panic("implement me")
 }
 
-func (i Identifier) isPatternLike() bool {
+func (i Identifier) isPatternLike() {
 	panic("implement me")
 }
 
@@ -194,15 +196,15 @@ func (r RegExpLiteral) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (r RegExpLiteral) isNodeLike() bool {
+func (r RegExpLiteral) isNodeLike() {
 	panic("implement me")
 }
 
-func (r RegExpLiteral) isExpressionLike() bool {
+func (r RegExpLiteral) isExpressionLike() {
 	panic("implement me")
 }
 
-func (r RegExpLiteral) isLiteralLike() bool {
+func (r RegExpLiteral) isLiteralLike() {
 	panic("implement me")
 }
 
@@ -229,7 +231,7 @@ func (p Programs) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (p Programs) isNodeLike() bool {
+func (p Programs) isNodeLike() {
 	panic("implement me")
 }
 
@@ -262,7 +264,7 @@ func (f Function) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (f Function) isNodeLike() bool {
+func (f Function) isNodeLike() {
 	panic("implement me")
 }
 
@@ -290,7 +292,7 @@ func (d Directive) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (d Directive) isNodeLike() bool {
+func (d Directive) isNodeLike() {
 	panic("implement me")
 }
 
@@ -317,11 +319,11 @@ func (b BlockStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (b BlockStatement) isNodeLike() bool {
+func (b BlockStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (b BlockStatement) isStatementLike() bool {
+func (b BlockStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -345,11 +347,11 @@ func (e EmptyStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (e EmptyStatement) isNodeLike() bool {
+func (e EmptyStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (e EmptyStatement) isStatementLike() bool {
+func (e EmptyStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -373,11 +375,11 @@ func (d DebuggerStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (d DebuggerStatement) isNodeLike() bool {
+func (d DebuggerStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (d DebuggerStatement) isStatementLike() bool {
+func (d DebuggerStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -405,11 +407,11 @@ func (w WithStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (w WithStatement) isNodeLike() bool {
+func (w WithStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (w WithStatement) isStatementLike() bool {
+func (w WithStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -436,11 +438,11 @@ func (r ReturnStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (r ReturnStatement) isNodeLike() bool {
+func (r ReturnStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (r ReturnStatement) isStatementLike() bool {
+func (r ReturnStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -468,11 +470,11 @@ func (l LabeledStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (l LabeledStatement) isNodeLike() bool {
+func (l LabeledStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (l LabeledStatement) isStatementLike() bool {
+func (l LabeledStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -499,11 +501,11 @@ func (b BreakStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (b BreakStatement) isNodeLike() bool {
+func (b BreakStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (b BreakStatement) isStatementLike() bool {
+func (b BreakStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -530,11 +532,11 @@ func (c ContinueStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (c ContinueStatement) isNodeLike() bool {
+func (c ContinueStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (c ContinueStatement) isStatementLike() bool {
+func (c ContinueStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -563,11 +565,11 @@ func (i IfStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (i IfStatement) isNodeLike() bool {
+func (i IfStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (i IfStatement) isStatementLike() bool {
+func (i IfStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -594,7 +596,7 @@ func (s SwitchCase) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (s SwitchCase) isNodeLike() bool {
+func (s SwitchCase) isNodeLike() {
 	panic("implement me")
 }
 
@@ -621,11 +623,11 @@ func (s SwitchStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (s SwitchStatement) isNodeLike() bool {
+func (s SwitchStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (s SwitchStatement) isStatementLike() bool {
+func (s SwitchStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -651,11 +653,11 @@ func (t ThrowStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (t ThrowStatement) isNodeLike() bool {
+func (t ThrowStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (t ThrowStatement) isStatementLike() bool {
+func (t ThrowStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -683,11 +685,11 @@ func (t TryStatement) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (t TryStatement) isNodeLike() bool {
+func (t TryStatement) isNodeLike() {
 	panic("implement me")
 }
 
-func (t TryStatement) isStatementLike() bool {
+func (t TryStatement) isStatementLike() {
 	panic("implement me")
 }
 
@@ -714,7 +716,7 @@ func (c CatchClause) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (c CatchClause) isNodeLike() bool {
+func (c CatchClause) isNodeLike() {
 	panic("implement me")
 }
 
@@ -1007,7 +1009,7 @@ func (s Super) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (s Super) isNodeLike() bool {
+func (s Super) isNodeLike() {
 	panic("implement me")
 }
 
@@ -1238,7 +1240,7 @@ func (m ModuleDeclaration) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (m ModuleDeclaration) isNodeLike() bool {
+func (m ModuleDeclaration) isNodeLike() {
 	panic("implement me")
 }
 
@@ -1265,7 +1267,7 @@ func (m ModuleSpecifier) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (m ModuleSpecifier) isNodeLike() bool {
+func (m ModuleSpecifier) isNodeLike() {
 	panic("implement me")
 }
 
@@ -1312,7 +1314,7 @@ func (i ImportSpecifier) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (i ImportSpecifier) isNodeLike() bool {
+func (i ImportSpecifier) isNodeLike() {
 	panic("implement me")
 }
 
@@ -1343,7 +1345,7 @@ func (i ImportDefaultSpecifier) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (i ImportDefaultSpecifier) isNodeLike() bool {
+func (i ImportDefaultSpecifier) isNodeLike() {
 	panic("implement me")
 }
 
@@ -1374,7 +1376,7 @@ func (i ImportNamespaceSpecifier) Parse() NodeLike {
 	panic("implement me")
 }
 
-func (i ImportNamespaceSpecifier) isNodeLike() bool {
+func (i ImportNamespaceSpecifier) isNodeLike() {
 	panic("implement me")
 }
 

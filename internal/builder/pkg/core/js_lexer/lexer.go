@@ -1,6 +1,7 @@
 package js_lexer
 
 import (
+	"github.com/seasonjs/espack/internal/builder/pkg/core/types"
 	"github.com/seasonjs/espack/internal/builder/pkg/core/util"
 	"github.com/seasonjs/espack/internal/logger"
 	"io"
@@ -11,12 +12,16 @@ import (
 // TODO 需要保证payload不会溢出
 
 type Lexer struct {
-	payload  []byte //要扫描的代码
-	index    int    //当前的位置
-	len      int    // payload的总长度
-	line     int    //当前代码行数
-	column   int    //当前代码的列数
-	ctxRange []int  //当前token的开始和结束位置
+	payload     []byte          //要扫描的代码
+	index       int             //当前的位置
+	len         int             // payload的总长度
+	startLine   int             //当前token开始行数
+	startColumn int             //当前token开始的列数
+	endLine     int             //当前token结束的行数
+	endColumn   int             //当前token结束的列数
+	tokenType   types.TokenType //当前Token类型
+	value       []byte          //当前Token的值
+	err         error           //当前遇到的错误
 }
 
 func NewLexer(reader io.Reader) Lexer {
@@ -75,7 +80,8 @@ func isLineTerminator(slice rune) bool {
 // Next 解析下一个Token，跳过空格和换行，然后自动增加index 和 line column
 func (s Lexer) Next() {
 	s.skipSpaceAndLineTerminator()
-	s.ctxRange = []int{s.index, s.index + 1}
+	s.startColumn = s.endColumn
+	s.startLine = s.endLine
 	ch := s.Peek(0)
 	//判断是不是js的token
 	switch ch {
@@ -83,31 +89,32 @@ func (s Lexer) Next() {
 		s.consumeDot()
 		return
 	case util.LeftParenthesis:
-		//TODO
+		s.finishToken(types.OpenParenToken, 1)
 		return
 	case util.RightParenthesis:
-		//TODO
+		s.finishToken(types.CloseParenToken, 1)
 		return
 	case util.Semicolon:
-		//TODO
+		s.finishToken(types.SemicolonToken, 1)
 		return
 	case util.Comma:
-		//TODO
+		s.finishToken(types.CommaToken, 1)
 		return
 	case util.LeftSquareBracket:
-		//TODO
+		s.finishToken(types.OpenBracketToken, 1)
 		return
 	case util.RightSquareBracket:
-		//TODO
+		s.finishToken(types.CloseBracketToken, 1)
 		return
 	case util.LeftCurlyBrace:
-		//TODO
+		s.finishToken(types.OpenBraceToken, 1)
 		return
 	case util.RightCurlyBrace:
-		//TODO
+		s.finishToken(types.CloseBraceToken, 1)
 		return
 	case util.Colon:
-		//TODO
+		//TODO 考虑function bind处理
+		s.finishToken(types.ColonToken, 1)
 		return
 	case util.QuotationMark:
 		s.consumeQuotationMark()
@@ -116,7 +123,22 @@ func (s Lexer) Next() {
 		s.consumeTemplate()
 		return
 	case util.Digit0:
-		//TODO
+		nextCH := s.Peek(1)
+		// '0x', '0X' - 16进制
+		if nextCH == util.LowercaseX || nextCH == util.UppercaseX {
+			s.consumeRadixNumber(16)
+			return
+		}
+		// '0o', '0O' - 8进制
+		if nextCH == util.LowercaseO || nextCH == util.UppercaseO {
+			s.consumeRadixNumber(8)
+			return
+		}
+		// '0b', '0B' - 2进制
+		if nextCH == util.LowercaseB || nextCH == util.UppercaseB {
+			s.consumeRadixNumber(2)
+			return
+		}
 		return
 	case
 		util.Digit1,
@@ -128,10 +150,10 @@ func (s Lexer) Next() {
 		util.Digit7,
 		util.Digit8,
 		util.Digit9:
-		s.consumeNumber()
+		s.consumeNumber(false)
 		return
 	case util.QuestionMark, util.Apostrophe:
-		s.consumeQuotationMark()
+		s.consumeQuotationMarkOrApostrophe()
 		return
 	case util.Slash:
 		s.consumeSlash()
@@ -190,13 +212,16 @@ func (s Lexer) Move(n int) byte {
 }
 
 // Line 获得当前的行号
-func (s Lexer) Line() int {
-	return s.line
+func (s Lexer) Line() (int, int) {
+	return s.startLine, s.endLine
 }
 
 // Column 获取当前的列
-func (s Lexer) Column() int {
-	return s.column
+func (s Lexer) Column() (int, int) {
+	return s.startColumn, s.endColumn
+}
+func (s Lexer) Location() (int, int, int, int) {
+	return s.startLine, s.endLine, s.startColumn, s.endColumn
 }
 
 // 跳过空格和换行
@@ -205,13 +230,15 @@ func (s Lexer) skipSpaceAndLineTerminator() {
 		ch := s.payload[s.index]
 		if isSpace(rune(ch)) {
 			s.index++
-			s.column++
+			s.startColumn++
+			s.endColumn++
 			continue
 		}
 		if isLineTerminator(rune(ch)) {
 			s.index++
-			s.line++
-			s.column = 0
+			s.startLine++
+			s.startColumn = 0
+			s.endColumn = 0
 			continue
 		}
 		return
@@ -220,11 +247,24 @@ func (s Lexer) skipSpaceAndLineTerminator() {
 
 //消费.
 func (s Lexer) consumeDot() {
-
+	nextCH := s.Peek(1)
+	//处理小数
+	if nextCH >= util.Digit0 && nextCH <= util.Digit9 {
+		s.consumeNumber(true)
+		return
+	}
+	//处理扩展运算符
+	if nextCH == util.Dot && s.Peek(2) == util.Dot {
+		s.finishToken(types.EllipsisToken, 3)
+		return
+	}
+	//处理正常的.
+	s.finishToken(types.DoToken, 1)
+	return
 }
 
 //消费number
-func (s Lexer) consumeNumber() {
+func (s Lexer) consumeNumber(startsWithDot bool) {
 
 }
 
@@ -305,5 +345,46 @@ func (s Lexer) consumeQuotationMark() {
 
 // 消费 \
 func (s Lexer) consumeBackslash() {
+
+}
+
+// 当前token完结
+func (s Lexer) finishToken(tokenType types.TokenType, cost int) {
+	s.value = s.payload[s.index : s.index+cost]
+	s.index += cost
+	s.endColumn += cost
+	s.tokenType = tokenType
+}
+
+//消费带进制的数
+func (s Lexer) consumeRadixNumber(radix int) {
+	var isBigInt = false
+	val := s.consumeInt(radix)
+	if val == nil {
+		//TODO：错误处理
+	}
+	if isBigInt {
+
+	}
+}
+
+//消费int
+func (s Lexer) consumeInt(radix int) []byte {
+	pos := s.index
+	//如果为进制数需要跳过两位
+	if radix != 10 {
+		pos++
+	}
+
+	return nil
+}
+
+//消费 " '
+func (s Lexer) consumeQuotationMarkOrApostrophe() {
+
+}
+
+// 报错
+func (s Lexer) throwErr() {
 
 }

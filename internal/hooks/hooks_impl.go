@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/seasonjs/espack/internal/builder"
-	"github.com/seasonjs/espack/internal/builder/pkg/htmlPlugin"
+	"github.com/seasonjs/espack/internal/builder/pkg/html_plugin"
 	"github.com/seasonjs/espack/internal/config"
 	"github.com/seasonjs/espack/internal/devServer"
 	"github.com/seasonjs/espack/internal/logger"
@@ -43,7 +43,7 @@ func (c *hookContext) InitHooks() *hookContext {
 	//创建plugin
 	c.pluginList = plugins.NewPluginQueue()
 	//TODO:通过文件引用插件，通过此处传入插件配置
-	c.pluginList.Add(htmlPlugin.NewHtmlPlugin(htmlPlugin.HtmlPluginOption{}))
+	c.pluginList.Add(html_plugin.NewHtmlPlugin(html_plugin.HtmlPluginOption{}))
 	return c
 }
 

@@ -70,3 +70,14 @@ func TestScanKeyWords(t *testing.T) {
 	//	t.Log(sc.JsTokenLocation())
 	//}
 }
+
+var wordScanTests = []string{
+	"",
+	" ",
+	"\n",
+	"a",
+	" a ",
+	"abc def",
+	" abc def ",
+	" abc\tdef\nghi\rjkl\fmno\vpqr\u0085stu\u00a0\n",
+}

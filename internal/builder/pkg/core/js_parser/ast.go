@@ -3,6 +3,7 @@ package js_parser
 type JsType string
 
 //需要注意的是这里的json转换是不符合我们需求的，所以应该直接使用string
+// 下面是来自golang json包的转换文档
 // String values encode as JSON strings coerced to valid UTF-8,
 // replacing invalid bytes with the Unicode replacement rune.
 // So that the JSON will be safe to embed inside HTML <script> tags,

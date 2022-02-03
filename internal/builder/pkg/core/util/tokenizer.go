@@ -1,4 +1,4 @@
-package js_lexer
+package util
 
 const (
 	BackSpace          byte = 8

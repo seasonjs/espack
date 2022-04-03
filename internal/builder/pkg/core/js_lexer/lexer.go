@@ -1,13 +1,106 @@
 package js_lexer
 
 import (
+	"bytes"
+	"github.com/pkg/errors"
 	"github.com/seasonjs/espack/internal/builder/pkg/core/types"
 	"github.com/seasonjs/espack/internal/builder/pkg/core/util"
 	"github.com/seasonjs/espack/internal/logger"
 	"io"
 	"io/ioutil"
+	"strconv"
 )
 
+// 禁止的数字边界
+type sForbiddenNumericSeparatorSiblings struct {
+	decBinOct []byte
+	hex       []byte
+}
+
+// 允许的数字边界
+type sAllowedNumericSeparatorSiblings struct {
+	bin []byte
+	oct []byte
+	dec []byte
+	hex []byte
+}
+
+//没有实际意义只是绑定接口
+
+var (
+	forbiddenNumericSeparatorSiblings = sForbiddenNumericSeparatorSiblings{
+		decBinOct: []byte{
+			util.Dot,
+			util.UppercaseB,
+			util.UppercaseE,
+			util.UppercaseO,
+			util.Underscore, // multiple separators are not allowed
+			util.LowercaseB,
+			util.LowercaseE,
+			util.LowercaseO,
+		},
+		hex: []byte{
+			util.Dot,
+			util.UppercaseX,
+			util.Underscore, // multiple separators are not allowed
+			util.LowercaseX,
+		},
+	}
+	allowedNumericSeparatorSiblings = sAllowedNumericSeparatorSiblings{
+		bin: []byte{
+			util.Digit0,
+			util.Digit1,
+		},
+		oct: []byte{
+			util.Digit0,
+			util.Digit1,
+			util.Digit2,
+			util.Digit3,
+			util.Digit4,
+			util.Digit5,
+			util.Digit6,
+			util.Digit7,
+		},
+		dec: []byte{
+			util.Digit0,
+			util.Digit1,
+			util.Digit2,
+			util.Digit3,
+			util.Digit4,
+			util.Digit5,
+			util.Digit6,
+			util.Digit7,
+			util.Digit8,
+			util.Digit9,
+		},
+		hex: []byte{
+			util.Digit0,
+			util.Digit1,
+			util.Digit2,
+			util.Digit3,
+			util.Digit4,
+			util.Digit5,
+			util.Digit6,
+			util.Digit7,
+			util.Digit8,
+			util.Digit9,
+			util.UppercaseA,
+			util.UppercaseB,
+			util.UppercaseC,
+			util.UppercaseD,
+			util.UppercaseE,
+			util.UppercaseF,
+			util.LowercaseA,
+			util.LowercaseB,
+			util.LowercaseC,
+			util.LowercaseD,
+			util.LowercaseE,
+			util.LowercaseF,
+		},
+	}
+)
+
+// Lexer is a lexer for JavaScript.
 // 前置知识了解：https://go.dev/blog/strings
 // TODO 需要保证payload不会溢出
 
@@ -21,7 +114,7 @@ type Lexer struct {
 	endColumn   int             //当前token结束的列数
 	tokenType   types.TokenType //当前Token类型
 	value       []byte          //当前Token的值
-	err         error           //当前遇到的错误
+	err         []error         //当前遇到的错误
 }
 
 func NewLexer(reader io.Reader) Lexer {
@@ -101,12 +194,14 @@ func (s Lexer) Next() {
 		s.finishToken(types.CommaToken, 1)
 		return
 	case util.LeftSquareBracket:
+		//TODO 考虑 [|
 		s.finishToken(types.OpenBracketToken, 1)
 		return
 	case util.RightSquareBracket:
 		s.finishToken(types.CloseBracketToken, 1)
 		return
 	case util.LeftCurlyBrace:
+		//TODO 考虑 {|
 		s.finishToken(types.OpenBraceToken, 1)
 		return
 	case util.RightCurlyBrace:
@@ -116,8 +211,8 @@ func (s Lexer) Next() {
 		//TODO 考虑function bind处理
 		s.finishToken(types.ColonToken, 1)
 		return
-	case util.QuotationMark:
-		s.consumeQuotationMark()
+	case util.QuestionMark:
+		s.consumeQuestionMark()
 		return
 	case util.GraveAccent:
 		s.consumeTemplate()
@@ -152,7 +247,7 @@ func (s Lexer) Next() {
 		util.Digit9:
 		s.consumeNumber(false)
 		return
-	case util.QuestionMark, util.Apostrophe:
+	case util.QuotationMark, util.Apostrophe:
 		s.consumeQuotationMarkOrApostrophe()
 		return
 	case util.Slash:
@@ -193,7 +288,6 @@ func (s Lexer) Next() {
 		return
 	default:
 		//TODO: return error
-
 	}
 	return
 }
@@ -338,9 +432,25 @@ func (s Lexer) consumeTemplate() {
 
 }
 
-//消费 "
-func (s Lexer) consumeQuotationMark() {
-
+//消费 ?
+func (s Lexer) consumeQuestionMark() {
+	nextCH := s.Peek(1)
+	nextTCH := s.Peek(2)
+	//??
+	if nextCH == util.QuestionMark {
+		//??=
+		if nextTCH == util.EqualsTo {
+			s.finishToken(types.NullishEqToken, 3)
+		} else {
+			s.finishToken(types.NullishToken, 2)
+		}
+	} else if nextCH == util.Dot &&
+		!(nextTCH >= util.Digit0 && nextTCH <= util.Digit9) {
+		//?.
+		s.finishToken(types.OptChainToken, 2)
+	} else {
+		s.finishToken(types.QuestionToken, 1)
+	}
 }
 
 // 消费 \
@@ -358,25 +468,92 @@ func (s Lexer) finishToken(tokenType types.TokenType, cost int) {
 
 //消费带进制的数
 func (s Lexer) consumeRadixNumber(radix int) {
-	var isBigInt = false
-	val := s.consumeInt(radix)
+	isBigInt := false
+	s.index = s.index + 2
+	val, cost := s.consumeInt(radix)
 	if val == nil {
 		//TODO：错误处理
+		panic("err")
+	}
+	if s.Peek(1) == util.LowercaseO {
+		s.index++
+		isBigInt = true
+	} else if s.Peek(1) == util.LowercaseM {
+		//TODO：错误处理
+		panic("err")
 	}
 	if isBigInt {
-
+		//TODO 处理jsBigInt
 	}
+	s.finishToken(types.NumericToken, cost)
 }
 
-//消费int
-func (s Lexer) consumeInt(radix int) []byte {
-	pos := s.index
+//消费int radix = 2,8,10,16
+func (s Lexer) consumeInt(radix int) ([]byte, int) {
+	startPos := s.index
 	//如果为进制数需要跳过两位
-	if radix != 10 {
-		pos++
+	var forbiddenSiblings, allowedSiblings []byte
+	//确定上下边界
+	switch radix {
+	//二进制
+	case 2:
+		forbiddenSiblings = forbiddenNumericSeparatorSiblings.decBinOct
+		allowedSiblings = allowedNumericSeparatorSiblings.bin
+		//八进制
+	case 8:
+		forbiddenSiblings = forbiddenNumericSeparatorSiblings.decBinOct
+		allowedSiblings = allowedNumericSeparatorSiblings.oct
+	//16进制
+	case 10:
+		forbiddenSiblings = forbiddenNumericSeparatorSiblings.decBinOct
+		allowedSiblings = allowedNumericSeparatorSiblings.dec
+	case 16:
+		forbiddenSiblings = forbiddenNumericSeparatorSiblings.hex
+		allowedSiblings = allowedNumericSeparatorSiblings.hex
 	}
+	//TODO: js的number比int大需要进行转化
+	total := 0
+	//仅仅记录循环，而不打破
+	for {
+		ch := s.Peek(s.index)
+		var val int
 
-	return nil
+		if ch == util.Underscore {
+			prev := s.Peek(s.index - 1)
+			next := s.Peek(s.index + 1)
+			if !bytes.ContainsRune(allowedSiblings, rune(next)) {
+				//TODO 报错
+				panic("error:")
+			} else if bytes.ContainsRune(forbiddenSiblings, rune(prev)) || bytes.ContainsRune(forbiddenSiblings, rune(next)) {
+				//TODO 报错
+				panic("error:")
+			}
+			//TODO 不允许_
+			s.index++
+		}
+		if ch >= util.LowercaseA {
+			val = int(ch - util.LowercaseA + util.LineFeed)
+		} else if ch >= util.UppercaseA {
+			val = int(ch - util.UppercaseA + util.LineFeed)
+		} else if util.IsDigit(ch) {
+			val = int(ch - util.Digit0) // 0-9
+		}
+		////TODO: 处理无穷
+		//else {
+		//
+		//}
+		if val >= radix {
+			//TODO： 出错，溢出边界
+			break
+		}
+		s.index++
+		total = total*radix + val
+		if s.index == startPos {
+			return nil, 0
+		}
+	}
+	//return int to []byte
+	return []byte(strconv.Itoa(total)), s.index - startPos
 }
 
 //消费 " '
@@ -385,6 +562,6 @@ func (s Lexer) consumeQuotationMarkOrApostrophe() {
 }
 
 // 报错
-func (s Lexer) throwErr() {
-
+func (s Lexer) throwErr(message string) {
+	s.err = append(s.err, errors.New(message))
 }

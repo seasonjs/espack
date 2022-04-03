@@ -20,6 +20,7 @@ package js_parser
 //  生成的时候我们会频繁操作拼接所以也是使用buffer更合理
 
 // 2022.2.3 之前想到到还是不完全，先将单个文件全都读到内存中，然后再进行解析，因为一个js文件再大也不可能过G？
+
 type ESVersion int
 
 const (

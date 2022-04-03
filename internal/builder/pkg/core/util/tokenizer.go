@@ -106,3 +106,7 @@ const (
 	LineSeparator      rune = 8232
 	ParagraphSeparator rune = 8233
 )
+
+func IsDigit(ch byte) bool {
+	return ch >= Digit0 && ch <= Digit9
+}

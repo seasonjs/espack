@@ -170,6 +170,17 @@ func isLineTerminator(slice rune) bool {
 	return false
 }
 
+// https://tc39.github.io/ecma262/#sec-line-terminators
+func isNewLine(code rune) bool {
+	switch code {
+	case rune(util.LineFeed), rune(util.CarriageReturn), util.LineSeparator, util.ParagraphSeparator:
+		return true
+
+	default:
+		return false
+	}
+}
+
 // Next 解析下一个Token，跳过空格和换行，然后自动增加index 和 line column
 func (s Lexer) Next() {
 	s.skipSpaceAndLineTerminator()
@@ -248,7 +259,7 @@ func (s Lexer) Next() {
 		s.consumeNumber(false)
 		return
 	case util.QuotationMark, util.Apostrophe:
-		s.consumeQuotationMarkOrApostrophe()
+		s.consumeString(rune(ch))
 		return
 	case util.Slash:
 		s.consumeSlash()
@@ -359,12 +370,119 @@ func (s Lexer) consumeDot() {
 
 //消费number
 func (s Lexer) consumeNumber(startsWithDot bool) {
+	start := s.index
+	isFloat := false
+	isBigInt := false
+	isDecimal := false
+	hasExponent := false
+	isOctal := false
+	if i, _ := s.consumeInt(10); startsWithDot && i == nil {
+		//TODO error is not float
+		return
+	}
+	hasLeadingZero :=
+		s.index-start >= 2 &&
+			s.Peek(start) == util.Digit0
 
+	if hasLeadingZero {
+		integer := s.payload[start : s.index-start]
+		isOctal = hasLeadingZero && !bytes.ContainsAny(integer, "89")
+	}
+	nextCh := s.Peek(s.index + 1)
+	if nextCh == util.Dot && !isOctal {
+		s.index = s.index + 1
+		s.consumeInt(10)
+		isFloat = true
+		nextCh = s.Peek(s.index)
+	}
+
+	if (nextCh == util.UppercaseE || nextCh == util.LowercaseE) && !isOctal {
+		s.index++
+		nextCh = s.Peek(s.index)
+		if nextCh == util.PlusSign || nextCh == util.Dash {
+			s.index++
+		}
+		if i, _ := s.consumeInt(10); i == nil {
+			//TODO error is not float
+			return
+		}
+		isFloat = true
+		hasExponent = true
+		nextCh = s.Peek(s.index)
+	}
+	if nextCh == util.LowercaseN {
+		if isFloat || hasLeadingZero {
+			//TODO error big int
+		}
+		s.index++
+		isBigInt = true
+	}
+
+	if nextCh == util.LowercaseM {
+		if hasExponent || hasLeadingZero {
+
+			//TODO error hasExponent or hasLeadingZero
+		}
+		s.index++
+		isDecimal = true
+	}
+
+	//TODO 处理 IsIdentifierStart
+
+	str := s.payload[start : s.index-start]
+	str = bytes.Trim(str, "_mn")
+
+	if isBigInt {
+		s.finishToken(types.BigIntToken, len(str))
+		return
+	}
+
+	if isDecimal {
+		s.finishToken(types.DecimalToken, len(str))
+		return
+	}
+
+	s.finishToken(types.NumericToken, len(str))
 }
 
 // 消费string
-func (s Lexer) consumeString() {
+func (s Lexer) consumeString(quote rune) {
+	var out []byte
+	s.index++
+	strStart := s.index
+	for {
+		if s.index >= s.len {
+			//TODO: string 溢出
+		}
+		ch := s.Peek(s.index)
+		if rune(ch) == quote {
+			break
+		}
+		if ch == util.Backslash {
+			//out += this.input.slice(chunkStart, this.state.pos);
+			copy(out, s.payload[strStart:s.index])
+			// $FlowFixMe
+			copy(out, s.consumeEscapedChar(false))
+			strStart = s.index
+		} else if rune(ch) == util.LineSeparator || rune(ch) == util.ParagraphSeparator {
+			s.index++
+			s.startLine++
+			s.startColumn = s.index
+		} else if isNewLine(rune(ch)) {
+			//throw this.raise(Errors.UnterminatedString, {
+			//at: this.state.startLoc,
+			//});
 
+		} else {
+			s.index++
+		}
+	}
+	s.index++
+	copy(out, s.payload[strStart:s.index])
+	s.finishToken(types.StringToken, len(out))
+}
+func (s Lexer) consumeEscapedChar(inTemplate bool) []byte {
+	return nil
 }
 
 // 消费/
@@ -554,11 +672,6 @@ func (s Lexer) consumeInt(radix int) ([]byte, int) {
 	}
 	//return int to []byte
 	return []byte(strconv.Itoa(total)), s.index - startPos
-}
-
-//消费 " '
-func (s Lexer) consumeQuotationMarkOrApostrophe() {
-
 }
 
 // 报错

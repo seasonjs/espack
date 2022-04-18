@@ -265,16 +265,16 @@ func (s Lexer) Next() {
 		s.consumeSlash()
 		return
 	case util.PercentSign, util.Asterisk:
-		s.consumePercentSignOrAsterisk()
+		s.consumePercentSignOrAsterisk(ch)
 		return
 	case util.VerticalBar, util.Ampersand:
-		s.consumeVerticalBarOrAmpersand()
+		s.consumeVerticalBarOrAmpersand(ch)
 		return
 	case util.Caret:
 		s.consumeCaret()
 		return
 	case util.PlusSign, util.Dash:
-		s.consumePlusSignOrDash()
+		s.consumePlusSignOrDash(ch)
 		return
 	case util.LessThan:
 		s.consumeLessThan()
@@ -388,17 +388,17 @@ func (s Lexer) consumeNumber(startsWithDot bool) {
 		integer := s.payload[start : s.index-start]
 		isOctal = hasLeadingZero && !bytes.ContainsAny(integer, "89")
 	}
-	nextCh := s.Peek(s.index + 1)
+	nextCh := s.Peek(1)
 	if nextCh == util.Dot && !isOctal {
 		s.index = s.index + 1
 		s.consumeInt(10)
 		isFloat = true
-		nextCh = s.Peek(s.index)
+		nextCh = s.Peek(0)
 	}
 
 	if (nextCh == util.UppercaseE || nextCh == util.LowercaseE) && !isOctal {
 		s.index++
-		nextCh = s.Peek(s.index)
+		nextCh = s.Peek(0)
 		if nextCh == util.PlusSign || nextCh == util.Dash {
 			s.index++
 		}
@@ -408,7 +408,7 @@ func (s Lexer) consumeNumber(startsWithDot bool) {
 		}
 		isFloat = true
 		hasExponent = true
-		nextCh = s.Peek(s.index)
+		nextCh = s.Peek(0)
 	}
 	if nextCh == util.LowercaseN {
 		if isFloat || hasLeadingZero {
@@ -454,7 +454,7 @@ func (s Lexer) consumeString(quote rune) {
 		if s.index >= s.len {
 			//TODO: string 溢出
 		}
-		ch := s.Peek(s.index)
+		ch := s.Peek(0)
 		if rune(ch) == quote {
 			break
 		}
@@ -487,37 +487,181 @@ func (s Lexer) consumeEscapedChar(inTemplate bool) []byte {
 
 // 消费/
 func (s Lexer) consumeSlash() {
-
+	nextCh := s.Peek(1)
+	if nextCh == util.EqualsTo {
+		s.finishToken(types.SlashAssignToken, 2)
+	} else {
+		s.finishToken(types.SlashToken, 1)
+	}
 }
 
 // 消费*或者%
-func (s Lexer) consumePercentSignOrAsterisk() {
+func (s Lexer) consumePercentSignOrAsterisk(code byte) {
+	var tt types.TokenType
+	size := 1
+	nextCh := s.Peek(1)
+	if code == util.Asterisk {
+		tt = types.AsteriskToken
+	} else {
+		tt = types.PercentSignToken
+	}
+	// '**'
+	if code == util.Asterisk && nextCh == util.Asterisk {
+		size++
+		nextCh = s.Peek(2)
+		tt = types.ExponentToken
+	}
 
+	// '%=' , '*='
+	if nextCh == util.EqualsTo {
+		size++
+		if code == util.PercentSign {
+			tt = types.ModEqToken
+		} else {
+			tt = types.MulEqToken
+		}
+	}
+	s.finishToken(tt, size)
 }
 
 //消费 ｜ &
-func (s Lexer) consumeVerticalBarOrAmpersand() {
+func (s Lexer) consumeVerticalBarOrAmpersand(code byte) {
+	// '||' '&&' '||=' '&&='
+	var tt types.TokenType
+	nextCh := s.Peek(1)
+	if nextCh == code {
+		if s.Peek(2) == util.EqualsTo {
+			//||=
+			if code == util.VerticalBar {
+				s.finishToken(types.OrEqToken, 3)
+			}
+			if code == util.Ampersand {
+				s.finishToken(types.AndEqToken, 3)
+			}
+		} else {
+			if code == util.VerticalBar {
+				tt = types.LogicalORToken
+			} else {
+				tt = types.LogicalANDToken
+			}
+			s.finishToken(tt, 2)
+		}
+		return
+	}
+
+	if code == util.VerticalBar {
+		// '|>'
+		if nextCh == util.GreaterThan {
+			s.finishToken(types.PipelineToken, 2)
+			return
+		}
+	}
+
+	if nextCh == util.EqualsTo {
+		s.finishToken(types.BitOrEqToken, 2)
+		return
+	}
+	if code == util.VerticalBar {
+		tt = types.BitOrToken
+	} else {
+		tt = types.BitAndToken
+	}
+	s.finishToken(tt, 1)
 
 }
 
 // 消费^
 func (s Lexer) consumeCaret() {
-
+	nextCh := s.Peek(1)
+	// '^='
+	if nextCh == util.EqualsTo {
+		s.finishToken(types.BitXorAssignToken, 2)
+	} else {
+		s.finishToken(types.BitXorToken, 1)
+	}
 }
 
 //消费+ -
-func (s Lexer) consumePlusSignOrDash() {
+func (s Lexer) consumePlusSignOrDash(code byte) {
+	// '+-'
+	nextCh := s.Peek(1)
+	var tt types.TokenType
+	if nextCh == code {
+		if code == util.PlusSign {
+			tt = types.IncrToken
+		}
+		if code == util.Dash {
+			tt = types.DecrToken
+		}
+		s.finishToken(tt, 2)
+		return
+	}
 
+	if nextCh == util.EqualsTo {
+		if code == util.PlusSign {
+			tt = types.AddAssignToken
+		}
+		if code == util.Dash {
+			tt = types.SubAssignToken
+		}
+		s.finishToken(tt, 2)
+	} else {
+		if code == util.PlusSign {
+			tt = types.AddToken
+		}
+		if code == util.Dash {
+			tt = types.SubToken
+		}
+		s.finishToken(tt, 1)
+	}
 }
 
 //消费 <
 func (s Lexer) consumeLessThan() {
+	// '<'
+	nextCh := s.Peek(1)
+	if nextCh == util.LessThan {
+		//<<=
+		if s.Peek(2) == util.EqualsTo {
+			s.finishToken(types.LtLtAssignToken, 3)
+			return
+		}
+		//<<
+		s.finishToken(types.LtLtToken, 2)
+		return
+	}
 
+	if nextCh == util.EqualsTo {
+		// <=
+		s.finishToken(types.LtAssignToken, 2)
+		return
+	}
+
+	s.finishToken(types.LtToken, 1)
 }
 
 //消费>
 func (s Lexer) consumeGreaterThan() {
-
+	if s.Peek(1) == util.GreaterThan {
+		if s.Peek(2) == util.GreaterThan {
+			if s.Peek(3) == util.EqualsTo {
+				//>>>=
+				s.finishToken(types.GtGtGtEqToken, 4)
+			}
+			//>>>
+			s.finishToken(types.GtGtGtToken, 3)
+		} else {
+			//>>=
+			if s.Peek(2) == util.EqualsTo {
+				s.finishToken(types.GtGtEqToken, 3)
+			}
+			//>>
+			s.finishToken(types.GtGtToken, 2)
+		}
+	} else {
+		//>
+		s.finishToken(types.GtToken, 1)
+	}
 }
 
 //消费！=
@@ -633,12 +777,12 @@ func (s Lexer) consumeInt(radix int) ([]byte, int) {
 	total := 0
 	//仅仅记录循环，而不打破
 	for {
-		ch := s.Peek(s.index)
+		ch := s.Peek(0)
 		var val int
 
 		if ch == util.Underscore {
-			prev := s.Peek(s.index - 1)
-			next := s.Peek(s.index + 1)
+			prev := s.Peek(-1)
+			next := s.Peek(1)
 			if !bytes.ContainsRune(allowedSiblings, rune(next)) {
 				//TODO 报错
 				panic("error:")

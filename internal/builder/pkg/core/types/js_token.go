@@ -97,7 +97,7 @@ const (
 	OrEqToken                   // ||=
 	NullishEqToken              // ??=
 	OptChainToken               // ?.
-
+	AtSignToken                 // @
 	// unused in lexer
 	PosToken      // +a
 	NegToken      // -a

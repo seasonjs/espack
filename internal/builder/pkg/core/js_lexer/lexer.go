@@ -283,7 +283,7 @@ func (s Lexer) Next() {
 		s.consumeGreaterThan()
 		return
 	case util.EqualsTo, util.ExclamationMark:
-		s.consumeExclamationMarkOrEqualsTo()
+		s.consumeExclamationMarkOrEqualsTo(ch)
 		return
 	case util.Tilde:
 		s.consumeTilde()
@@ -664,22 +664,49 @@ func (s Lexer) consumeGreaterThan() {
 	}
 }
 
-//消费！=
-func (s Lexer) consumeExclamationMarkOrEqualsTo() {
+//消费 =!
+func (s Lexer) consumeExclamationMarkOrEqualsTo(code byte) {
+	nextCh := s.Peek(1)
+	//=
+	if code == util.EqualsTo {
+		//==
+		if nextCh == util.EqualsTo {
+			//===
+			if s.Peek(2) == util.EqualsTo {
+				s.finishToken(types.EqEqEqToken, 3)
+			}
+			s.finishToken(types.EqEqToken, 2)
+		}
+		s.finishToken(types.EqToken, 1)
+	}
+	//!
+	if code == util.ExclamationMark {
+		//!=
+		if nextCh == util.EqualsTo {
+			//!==
+			if s.Peek(2) == util.EqualsTo {
+				s.finishToken(types.NotEqToken, 3)
+			}
+			s.finishToken(types.NotEqToken, 2)
+		}
+		s.finishToken(types.NotToken, 1)
+	}
 
 }
 
 //消费 ～
 func (s Lexer) consumeTilde() {
-
+	s.finishToken(types.BitNotToken, 1)
 }
 
 //消费 @
 func (s Lexer) consumeAtSign() {
-
+	//nextCh := s.Peek(1)
+	//TODO @@
+	s.finishToken(types.AtSignToken, 1)
 }
 
-//消费#
+//TODO 消费#
 func (s Lexer) consumeNumberSign() {
 
 }

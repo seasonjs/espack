@@ -1,4 +1,4 @@
-package devServer
+package espack_plugin_devServer
 
 import (
 	"mime"

@@ -1,4 +1,4 @@
-package builder
+package espack_plugin_esbuild
 
 import (
 	"fmt"

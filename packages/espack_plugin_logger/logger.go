@@ -1,4 +1,4 @@
-package logger
+package espack_plugin_logger
 
 import (
 	"fmt"

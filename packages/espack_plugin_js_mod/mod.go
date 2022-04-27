@@ -1,4 +1,4 @@
-package mod
+package espack_plugin_js_mod
 
 import (
 	"github.com/seasonjs/espack/internal/logger"

@@ -1,4 +1,4 @@
-package builder
+package espack_plugin_esbuild
 
 import (
 	"github.com/evanw/esbuild/pkg/api"

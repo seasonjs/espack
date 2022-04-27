@@ -7,7 +7,7 @@
 //截取修改自:
 //https://github.com/mholt/archiver/blob/master/targz.go
 
-package mod
+package espack_plugin_js_mod
 
 import (
 	"compress/gzip"

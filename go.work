@@ -1,0 +1,11 @@
+go 1.18
+
+use (
+	./packages/espack_plugin_css
+	./packages/espack_plugin_esbuild
+	./packages/espack_plugin_html
+	./packages/espack_plugin_js
+	./packages/espack_plugin_js_mod
+	./packages/espack_plugin_logger
+	./packages/espack_plugin_ts
+)
